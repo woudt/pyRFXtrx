@@ -21,6 +21,7 @@
 This module provides low level packet parsing and generation code for the
 RFXtrx.
 """
+# pylint: disable=C0302,R0902,R0903,R0911,R0913
 
 
 def parse(data):
