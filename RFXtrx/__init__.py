@@ -128,7 +128,7 @@ class LightingDevice(RFXtrxDevice):
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x02, (level+6) * 15 / 100)
+                             0x02, (level + 6) * 15 / 100)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             raise ValueError("Dim level unsupported for Lighting3")
@@ -163,20 +163,20 @@ class SensorEvent(RFXtrxEvent):
         """Constructor"""
         device = RFXtrxDevice(pkt)
         super(SensorEvent, self).__init__(device)
-        
+
         self.values = {}
-        if isinstance(pkt, lowlevel.Temp) or \
-           isinstance(pkt, lowlevel.TempHumid) or \
-           isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, lowlevel.Temp) \
+                or isinstance(pkt, lowlevel.TempHumid) \
+                or isinstance(pkt, lowlevel.TempHumidBaro):
             self.values['Temperature'] = pkt.temp
-        if isinstance(pkt, lowlevel.Humid) or \
-           isinstance(pkt, lowlevel.TempHumid) or \
-           isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, lowlevel.Humid) \
+                or isinstance(pkt, lowlevel.TempHumid) \
+                or isinstance(pkt, lowlevel.TempHumidBaro):
             self.values['Humidity'] = pkt.humidity
             self.values['Humidity status'] = pkt.humidity_status_string
             self.values['Humidity status numeric'] = pkt.humidity_status
-        if isinstance(pkt, lowlevel.Baro) or \
-           isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, lowlevel.Baro) \
+                or isinstance(pkt, lowlevel.TempHumidBaro):
             self.values['Barometer'] = pkt.barometer
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
@@ -197,20 +197,20 @@ class ControlEvent(RFXtrxEvent):
 
     def __init__(self, pkt):
         """Constructor"""
-        if isinstance(pkt, lowlevel.Lighting1) or \
-           isinstance(pkt, lowlevel.Lighting2) or \
-           isinstance(pkt, lowlevel.Lighting3):
+        if isinstance(pkt, lowlevel.Lighting1) \
+                or isinstance(pkt, lowlevel.Lighting2) \
+                or isinstance(pkt, lowlevel.Lighting3):
             device = LightingDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
-        
+
         self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) or \
-           isinstance(pkt, lowlevel.Lighting2) or \
-           isinstance(pkt, lowlevel.Lighting3):
+        if isinstance(pkt, lowlevel.Lighting1) \
+                or isinstance(pkt, lowlevel.Lighting2) \
+                or isinstance(pkt, lowlevel.Lighting3):
             self.values['Command'] = pkt.cmnd_string
-        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]: 
+        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
             self.values['Dim level'] = pkt.level * 100 / 15
         if isinstance(pkt, lowlevel.Lighting3):
             self.values['Battery numeric'] = pkt.battery

@@ -37,7 +37,8 @@ class PySerialTransport(RFXtrxTransport):
                 data = self.serial.read(pkt[0])
                 pkt.extend(bytearray(data))
                 if self.debug:
-                    print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+                    print("Recv: " + " ".join("0x{0:02x}".format(x)
+                                              for x in pkt))
                 return self.parse(pkt)
 
     def send(self, data):
@@ -53,7 +54,7 @@ class PySerialTransport(RFXtrxTransport):
 
     def reset(self):
         self.send('\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        sleep(0.3) # Should work with 0.05, but not for me
+        sleep(0.3)  # Should work with 0.05, but not for me
         self.serial.flushInput()
         self.send('\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         return self.receive_blocking()
