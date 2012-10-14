@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 # If not, see <http://www.gnu.org/licenses/>.
+"""
+This module provides a transport for PySerial
+"""
 
 from serial import Serial
 from time import sleep
@@ -24,12 +27,14 @@ from . import RFXtrxTransport
 
 
 class PySerialTransport(RFXtrxTransport):
+    """ Implementation of a transport using PySerial """
 
     def __init__(self, port, debug=False):
         self.serial = Serial(port, 38400, timeout=0.1)
         self.debug = debug
 
     def receive_blocking(self):
+        """ Wait until a packet is received and return with an RFXtrxEvent """
         while True:
             data = self.serial.read()
             if (len(data) > 0):
@@ -42,6 +47,7 @@ class PySerialTransport(RFXtrxTransport):
                 return self.parse(pkt)
 
     def send(self, data):
+        """ Send the given packet """
         if isinstance(data, bytearray):
             pkt = data
         elif isinstance(data, str) or isinstance(data, bytes):
@@ -53,6 +59,7 @@ class PySerialTransport(RFXtrxTransport):
         self.serial.write(pkt)
 
     def reset(self):
+        """ Reset the RFXtrx """
         self.send('\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         sleep(0.3)  # Should work with 0.05, but not for me
         self.serial.flushInput()
