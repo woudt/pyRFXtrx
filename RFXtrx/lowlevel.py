@@ -398,10 +398,43 @@ class Lighting3(Packet):
 
 
 ###############################################################################
+# SensorPacket class
+###############################################################################
+
+class SensorPacket(Packet):
+    """
+    Abstract superclass for all sensor related packets
+    """
+
+    HUMIDITY_TYPES = {0x00: 'dry',
+                      0x01: 'comfort',
+                      0x02: 'normal',
+                      0x03: 'wet',
+                      -1: 'unknown humidity'}
+    """
+    Mapping of humidity types to string
+    """
+
+    FORECAST_TYPES = {0x00: 'no forecast available',
+                      0x01: 'sunny',
+                      0x02: 'partly cloudy',
+                      0x03: 'cloudy',
+                      0x04: 'rain',
+                      -1: 'unknown forecast'}
+    """
+    Mapping of forecast types to string
+    """
+
+    def __init__(self):
+        """Constructor"""
+        super(SensorPacket, self).__init__()
+
+
+###############################################################################
 # Temp class
 ###############################################################################
 
-class Temp(Packet):
+class Temp(SensorPacket):
     """
     Data class for the Temp1 packet type
     """
@@ -471,7 +504,7 @@ class Temp(Packet):
 # Humid class
 ###############################################################################
 
-class Humid(Packet):
+class Humid(SensorPacket):
     """
     Data class for the Humid packet type
     """
@@ -497,6 +530,7 @@ class Humid(Packet):
         self.id2 = None
         self.humidity = None
         self.humidity_status = None
+        self.humidity_status_string = None
         self.battery = None
 
     def load_receive(self, data):
@@ -524,13 +558,17 @@ class Humid(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-
+        if self.humidity_status in self.HUMIDITY_TYPES:
+            self.humidity_status_string = \
+                self.HUMIDITY_TYPES[self.humidity_status]
+        else:
+            self.humidity_status_string = self.HUMIDITY_TYPES[-1]
 
 ###############################################################################
 # TempHumid class
 ###############################################################################
 
-class TempHumid(Packet):
+class TempHumid(SensorPacket):
     """
     Data class for the TempHumid packet type
     """
@@ -566,6 +604,7 @@ class TempHumid(Packet):
         self.temp = None
         self.humidity = None
         self.humidity_status = None
+        self.humidity_status_string = None
         self.battery = None
 
     def load_receive(self, data):
@@ -598,13 +637,18 @@ class TempHumid(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.humidity_status in self.HUMIDITY_TYPES:
+            self.humidity_status_string = \
+                self.HUMIDITY_TYPES[self.humidity_status]
+        else:
+            self.humidity_status_string = self.HUMIDITY_TYPES[-1]
 
 
 ###############################################################################
 # Baro class
 ###############################################################################
 
-class Baro(Packet):
+class Baro(SensorPacket):
     """
     Data class for the Baro packet type
     """
@@ -630,6 +674,7 @@ class Baro(Packet):
         self.baro2 = None
         self.baro = None
         self.forecast = None
+        self.forecast_string = None
         self.battery = None
 
     def load_receive(self, data):
@@ -659,13 +704,17 @@ class Baro(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.forecast in self.FORECAST_TYPES:
+            self.forecast_string = self.FORECAST_TYPES[self.forecast]
+        else:
+            self.forecast_string = self.FORECAST_TYPES[-1]
 
 
 ###############################################################################
 # TempHumidBaro class
 ###############################################################################
 
-class TempHumidBaro(Packet):
+class TempHumidBaro(SensorPacket):
     """
     Data class for the TempHumidBaro packet type
     """
@@ -695,10 +744,12 @@ class TempHumidBaro(Packet):
         self.temp = None
         self.humidity = None
         self.humidity_status = None
+        self.humidity_status_string = None
         self.baro1 = None
         self.baro2 = None
         self.baro = None
         self.forecast = None
+        self.forecast_string = None
         self.battery = None
 
     def load_receive(self, data):
@@ -735,3 +786,12 @@ class TempHumidBaro(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.humidity_status in self.HUMIDITY_TYPES:
+            self.humidity_status_string = \
+                self.HUMIDITY_TYPES[self.humidity_status]
+        else:
+            self.humidity_status_string = self.HUMIDITY_TYPES[-1]
+        if self.forecast in self.FORECAST_TYPES:
+            self.forecast_string = self.FORECAST_TYPES[self.forecast]
+        else:
+            self.forecast_string = self.FORECAST_TYPES[-1]
