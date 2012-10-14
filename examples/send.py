@@ -19,9 +19,15 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 from RFXtrx.pyserial import PySerialTransport
+from RFXtrx import LightingDevice
+from time import sleep
 
 transport = PySerialTransport('/dev/cu.usbserial-05VN8GHS', debug=True)
 transport.reset()
 
 while True:
-    print(transport.receive_blocking())
+    event = transport.receive_blocking()
+    if isinstance(event.device, LightingDevice):
+        sleep(5)
+        event.device.send_off(transport)
+        ack = transport.receive_blocking()
