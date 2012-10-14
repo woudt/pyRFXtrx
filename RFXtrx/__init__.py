@@ -17,8 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 # If not, see <http://www.gnu.org/licenses/>.
+"""
+This module provides the base implementation for pyRFXtrx
+"""
 
-import lowlevel
+from RFXtrx import lowlevel
 
 
 ###############################################################################
@@ -28,7 +31,9 @@ import lowlevel
 class RFXtrxTransport(object):
     """ Abstract superclass for all transport mechanisms """
 
-    def parse(self, data):
+    @staticmethod
+    def parse(data):
+        """ Parse the given data and return an RFXtrxEvent """
         pkt = lowlevel.parse(data)
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
@@ -45,7 +50,6 @@ class RFXtrxDevice(object):
     """ Superclass for all devices """
 
     def __init__(self, pkt):
-        """Constructor"""
         self.packettype = pkt.packettype
         self.subtype = pkt.subtype
         self.type_string = pkt.type_string
@@ -81,8 +85,17 @@ class LightingDevice(RFXtrxDevice):
         if isinstance(pkt, lowlevel.Lighting3):
             self.system = pkt.system
             self.channel = pkt.channel
+        if isinstance(pkt, lowlevel.Lighting5):
+            self.id_combined = pkt.id_combined
+            self.unitcode = pkt.unitcode
+        if isinstance(pkt, lowlevel.Lighting6):
+            self.id_combined = pkt.id_combined
+            self.groupcode = pkt.groupcode
+            self.unitcode = pkt.unitcode
+            self.cmndseqnbr = 0
 
     def send_on(self, transport):
+        """ Send an 'On' command using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
@@ -98,10 +111,22 @@ class LightingDevice(RFXtrxDevice):
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
                              0x10)
             transport.send(pkt.data)
+        elif self.packettype == 0x14:  # Lighting5
+            pkt = lowlevel.Lighting5()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
+                             0x01, 0x00)
+            transport.send(pkt.data)
+        elif self.packettype == 0x15:  # Lighting6
+            pkt = lowlevel.Lighting6()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
+                             self.unitcode, 0x00, self.cmndseqnbr)
+            self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+            transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
     def send_off(self, transport):
+        """ Send an 'Off' command using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
@@ -117,10 +142,24 @@ class LightingDevice(RFXtrxDevice):
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
                              0x1a)
             transport.send(pkt.data)
+        elif self.packettype == 0x14:  # Lighting5
+            pkt = lowlevel.Lighting5()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
+                             0x00, 0x00)
+            transport.send(pkt.data)
+        elif self.packettype == 0x15:  # Lighting6
+            pkt = lowlevel.Lighting6()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
+                             self.unitcode, 0x01, self.cmndseqnbr)
+            self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+            transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
     def send_dim(self, transport, level):
+        """ Send a 'Dim' command with the given level using the given
+            transport
+        """
         if self.packettype == 0x10:  # Lighting1
             raise ValueError("Dim level unsupported for Lighting1")
             # Supporting a dim level for X10 directly is not possible because
@@ -128,7 +167,7 @@ class LightingDevice(RFXtrxDevice):
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x02, (level + 6) * 15 / 100)
+                             0x02, (level + 6) * 15 // 100)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             raise ValueError("Dim level unsupported for Lighting3")
@@ -136,6 +175,13 @@ class LightingDevice(RFXtrxDevice):
             # (Ikea Koppla) due to the availability of the level 1 .. level 9
             # commands. I just need someone to help me with defining a mapping
             # between a percentage and a level
+        elif self.packettype == 0x14:  # Lighting5
+            pkt = lowlevel.Lighting5()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
+                             0x10, (level + 3) * 31 // 100)
+            transport.send(pkt.data)
+        elif self.packettype == 0x15:  # Lighting6
+            raise ValueError("Dim level unsupported for Lighting6")
         else:
             raise ValueError("Unsupported packettype")
 
@@ -148,7 +194,6 @@ class RFXtrxEvent(object):
     """ Abstract superclass for all events """
 
     def __init__(self, device):
-        """Constructor"""
         self.device = device
 
 
@@ -160,7 +205,6 @@ class SensorEvent(RFXtrxEvent):
     """ Concrete class for sensor events """
 
     def __init__(self, pkt):
-        """Constructor"""
         device = RFXtrxDevice(pkt)
         super(SensorEvent, self).__init__(device)
 
@@ -185,7 +229,7 @@ class SensorEvent(RFXtrxEvent):
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
-            type(self), self.device, self.values)
+            type(self), self.device, sorted(self.values.items()))
 
 
 ###############################################################################
@@ -196,10 +240,11 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
-        """Constructor"""
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
+                or isinstance(pkt, lowlevel.Lighting3) \
+                or isinstance(pkt, lowlevel.Lighting5) \
+                or isinstance(pkt, lowlevel.Lighting6):
             device = LightingDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
@@ -211,11 +256,11 @@ class ControlEvent(RFXtrxEvent):
                 or isinstance(pkt, lowlevel.Lighting3):
             self.values['Command'] = pkt.cmnd_string
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = pkt.level * 100 / 15
-        if isinstance(pkt, lowlevel.Lighting3):
-            self.values['Battery numeric'] = pkt.battery
+            self.values['Dim level'] = pkt.level * 100 // 15
+        if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            self.values['Dim level'] = pkt.level * 100 // 31
         self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
-            type(self), self.device, self.values)
+            type(self), self.device, sorted(self.values.items()))

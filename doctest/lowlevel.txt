@@ -273,11 +273,270 @@ Level 5
 Lighting4
 ---------
 
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting4()
+>>> print(x)
+Lighting4 [subtype=None, seqnbr=None, cmd=None, pulse=None, rssi=None]
+>>> x.load_receive(bytearray([0x09, 0x13, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x01, 0x5e, 0x70]))
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=42, cmd=123456, pulse=350, rssi=7]
+>>> 
+>>> print(list(x.data))
+[9, 19, 0, 42, 18, 52, 86, 1, 94, 112]
+>>> 
+>>> print(x.packetlength)
+9
+>>> print(x.packettype)
+19
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+PT2262
+>>> print(x.seqnbr)
+42
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> print(x.id_string)
+123456
+>>> print(x.pulsehigh)
+1
+>>> print(x.pulselow)
+94
+>>> print(x.pulse)
+350
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting4()
+>>> x.set_transmit(0x00, 0x2a, 0x123456, 0x15e)
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=42, cmd=123456, pulse=350, rssi=0]
+>>> 
+>>> print(list(x.data))
+[9, 19, 0, 42, 18, 52, 86, 1, 94, 0]
+>>> 
+>>> print(x.packetlength)
+9
+>>> print(x.packettype)
+19
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+PT2262
+>>> print(x.seqnbr)
+42
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> print(x.id_string)
+123456
+>>> print(x.pulsehigh)
+1
+>>> print(x.pulselow)
+94
+>>> print(x.pulse)
+350
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+
+
 Lighting5
 ---------
 
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting5()
+>>> print(x)
+Lighting5 [subtype=None, seqnbr=None, id=None, cmnd=None, level=None, rssi=None]
+>>> x.load_receive(bytearray([0x0a, 0x14, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x07, 0x10, 0x11, 0x70]))
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=42, id=123456:7, cmnd=Set level, level=17, rssi=7]
+>>> 
+>>> print(list(x.data))
+[10, 20, 0, 42, 18, 52, 86, 7, 16, 17, 112]
+>>> print(x.packetlength)
+10
+>>> print(x.packettype)
+20
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+LightwaveRF, Siemens
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> print(x.id_string)
+123456:7
+>>> print(x.cmnd)
+16
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+17
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting5()
+>>> x.set_transmit(0x00, 0x2a, 0x123456, 0x07, 0x10, 0x11)
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=42, id=123456:7, cmnd=Set level, level=17, rssi=0]
+>>> 
+>>> print(list(x.data))
+[10, 20, 0, 42, 18, 52, 86, 7, 16, 17, 0]
+>>> print(x.packetlength)
+10
+>>> print(x.packettype)
+20
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+LightwaveRF, Siemens
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> print(x.id_string)
+123456:7
+>>> print(x.cmnd)
+16
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+17
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+
+
 Lighting6
 ---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting6()
+>>> print(x)
+Lighting6 [subtype=None, seqnbr=None, id=None, cmnd=None, cmndseqnbr=None, rssi=None]
+>>> x.load_receive(bytearray([0x0b, 0x15, 0x00, 0x2a, 0x12, 0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]))
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=42, id=1234:A5, cmnd=Group off, cmndseqnbr=1, rssi=7]
+>>> 
+>>> print(list(x.data))
+[11, 21, 0, 42, 18, 52, 65, 5, 3, 1, 0, 112]
+>>> 
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+21
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Blyss
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234:A5
+>>> print(x.cmnd)
+3
+>>> print(x.cmnd_string)
+Group off
+>>> print(x.cmndseqnbr)
+1
+>>> print(x.rfu)
+0
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting6()
+>>> x.set_transmit(0x00, 0x2a, 0x1234, 0x41, 0x05, 0x03, 0x01)
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=42, id=1234:A5, cmnd=Group off, cmndseqnbr=1, rssi=0]
+>>> 
+>>> print(list(x.data))
+[11, 21, 0, 42, 18, 52, 65, 5, 3, 1, 0, 0]
+>>> 
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+21
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Blyss
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234:A5
+>>> print(x.cmnd)
+3
+>>> print(x.cmnd_string)
+Group off
+>>> print(x.cmndseqnbr)
+1
+>>> print(x.rfu)
+0
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+
 
 Curtain1
 --------
