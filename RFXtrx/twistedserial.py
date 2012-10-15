@@ -21,6 +21,7 @@
 This module provides a transport and protocol implementation for using pyRFXtrx
 with the Twisted framework
 """
+# pylint: disable=C0103,E0611,E1101,F0401
 
 from twisted.internet import reactor
 from twisted.internet.protocol import Protocol
@@ -30,6 +31,9 @@ from . import RFXtrxTransport
 
 
 class _TwistedSerialProtocol(Protocol):
+    """ Twisted Protocol implementation, used internally by
+        TwistedSerialTransport
+    """
 
     def __init__(self, receive_callback, reset_callback):
         self.receive_callback = receive_callback
@@ -37,17 +41,20 @@ class _TwistedSerialProtocol(Protocol):
         self.buffer = bytearray([])
 
     def dataReceived(self, data):
-        bs = bytearray(data)
-        self.buffer.extend(bs)
-        if len(self.buffer) == self.buffer[0]+1:
+        """ Called by Twisted when data is received """
+        bdata = bytearray(data)
+        self.buffer.extend(bdata)
+        if len(self.buffer) == self.buffer[0] + 1:
             self.receive_callback(self.buffer)
             self.buffer = bytearray([])
 
     def connectionMade(self):
+        """ Called by Twisted when the connection is made """
         self.reset_callback()
 
 
 class TwistedSerialTransport(RFXtrxTransport):
+    """ Transport implementation for the Twisted framework """
 
     def __init__(self, port, receive_callback, debug=False):
         self.debug = debug
@@ -57,6 +64,7 @@ class TwistedSerialTransport(RFXtrxTransport):
         self.serial.setBaudRate(38400)
 
     def _receive(self, data):
+        """ Handle a received packet """
         if self.debug:
             print("Recv: " + " ".join("0x{0:02x}".format(x) for x in data))
         pkt = self.parse(data)
@@ -73,6 +81,7 @@ class TwistedSerialTransport(RFXtrxTransport):
         """ Reset the RFXtrx """
         self.send('\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         reactor.callLater(0.3, self._get_status)
-    
+
     def _get_status(self):
+        """ Get the status of the RFXtrx after a reset """
         self.send('\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
