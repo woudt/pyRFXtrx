@@ -152,6 +152,22 @@ class Lighting1(Packet):
         self.cmnd = None
         self.cmnd_string = None
 
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x10
+            self.subtype = subtype
+            hcode = id_string[0:1]
+            for hcode_num in self.HOUSECODES:
+                if self.HOUSECODES[hcode_num] == hcode:
+                    self.housecode = hcode_num
+            self.unitcode = int(id_string[1:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
     def load_receive(self, data):
         """Load data from a bytearray"""
         self.data = data
@@ -191,10 +207,11 @@ class Lighting1(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-        if self.cmnd in self.COMMANDS:
-            self.cmnd_string = self.COMMANDS[self.cmnd]
-        else:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
 
 ###############################################################################
@@ -253,6 +270,23 @@ class Lighting2(Packet):
         self.level = None
         self.cmnd_string = None
 
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x11
+            self.subtype = subtype
+            self.id_combined = int(id_string[:7], 16)
+            self.id1 = self.id_combined >> 24
+            self.id2 = self.id_combined >> 16 & 0xff
+            self.id3 = self.id_combined >> 8 & 0xff
+            self.id4 = self.id_combined & 0xff
+            self.unitcode = int(id_string[8:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
     def load_receive(self, data):
         """Load data from a bytearray"""
         self.data = data
@@ -305,10 +339,11 @@ class Lighting2(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-        if self.cmnd in self.COMMANDS:
-            self.cmnd_string = self.COMMANDS[self.cmnd]
-        else:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
 
 ###############################################################################
@@ -362,6 +397,21 @@ class Lighting3(Packet):
         self.battery = None
         self.cmnd_string = None
 
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x12
+            self.subtype = subtype
+            self.system = int(id_string[:1], 16)
+            self.channel = int(id_string[2:], 16)
+            self.channel1 = self.channel & 0xff
+            self.channel2 = self.channel >> 8
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
     def load_receive(self, data):
         """Load data from a bytearray"""
         self.data = data
@@ -408,10 +458,11 @@ class Lighting3(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-        if self.cmnd in self.COMMANDS:
-            self.cmnd_string = self.COMMANDS[self.cmnd]
-        else:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
 
 ###############################################################################
@@ -445,6 +496,21 @@ class Lighting4(Packet):
         self.pulsehigh = None
         self.pulselow = None
         self.pulse = None
+
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x13
+            self.subtype = subtype
+            self.cmd = int(id_string, 16)
+            self.cmd1 = self.cmd >> 16
+            self.cmd2 = (self.cmd >> 8) & 0xff
+            self.cmd3 = self.cmd & 0xff
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
 
     def load_receive(self, data):
         """Load data from a bytearray"""
@@ -584,6 +650,22 @@ class Lighting5(Packet):
         self.level = None
         self.cmnd_string = None
 
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x14
+            self.subtype = subtype
+            self.id_combined = int(id_string[:6], 16)
+            self.id1 = self.id_combined >> 16
+            self.id2 = self.id_combined >> 8 & 0xff
+            self.id3 = self.id_combined & 0xff
+            self.unitcode = int(id_string[7:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
     def load_receive(self, data):
         """Load data from a bytearray"""
         self.data = data
@@ -633,16 +715,17 @@ class Lighting5(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-        if self.subtype == 0x00 and self.cmnd in self.COMMANDS_00:
-            self.cmnd_string = self.COMMANDS_00[self.cmnd]
-        elif self.subtype == 0x01 and self.cmnd in self.COMMANDS_01:
-            self.cmnd_string = self.COMMANDS_01[self.cmnd]
-        elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02:
-            self.cmnd_string = self.COMMANDS_02[self.cmnd]
-        elif self.subtype >= 0x03 and self.cmnd in self.COMMANDS_XX:
-            self.cmnd_string = self.COMMANDS_XX[self.cmnd]
-        else:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+        if self.cmnd is not None:
+            if self.subtype == 0x00 and self.cmnd in self.COMMANDS_00:
+                self.cmnd_string = self.COMMANDS_00[self.cmnd]
+            elif self.subtype == 0x01 and self.cmnd in self.COMMANDS_01:
+                self.cmnd_string = self.COMMANDS_01[self.cmnd]
+            elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02:
+                self.cmnd_string = self.COMMANDS_02[self.cmnd]
+            elif self.subtype >= 0x03 and self.cmnd in self.COMMANDS_XX:
+                self.cmnd_string = self.COMMANDS_XX[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
 
 ###############################################################################
@@ -688,6 +771,22 @@ class Lighting6(Packet):
         self.rfu = None
         self.level = None
         self.cmnd_string = None
+
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x15
+            self.subtype = subtype
+            self.id_combined = int(id_string[:4], 16)
+            self.id1 = self.id_combined >> 8 & 0xff
+            self.id2 = self.id_combined & 0xff
+            self.groupcode = ord(id_string[5])
+            self.unitcode = int(id_string[6:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
 
     def load_receive(self, data):
         """Load data from a bytearray"""
@@ -742,10 +841,11 @@ class Lighting6(Packet):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-        if self.cmnd in self.COMMANDS:
-            self.cmnd_string = self.COMMANDS[self.cmnd]
-        else:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
 
 ###############################################################################

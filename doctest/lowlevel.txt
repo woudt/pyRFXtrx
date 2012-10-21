@@ -92,6 +92,27 @@ On
 0
 >>> print(x.rssi)
 0
+>>> 
+>>> x = lowlevel.Lighting1()
+>>> x.parse_id(0, "E13")
+>>> print(x)
+Lighting1 [subtype=X10 lighting, seqnbr=None, id=E13, cmnd=None, rssi=None]
+>>> print(x.housecode)
+69
+>>> print(x.unitcode)
+13
+>>> x.parse_id(0, "Q1")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "AA")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Lighting2
@@ -184,6 +205,41 @@ Set level
 0
 >>> print(x.rssi)
 0
+>>> 
+>>> x = lowlevel.Lighting2()
+>>> x.parse_id(0, "1234567:5")
+>>> print(x)
+Lighting2 [subtype=AC, seqnbr=None, id=1234567:5, cmnd=None, level=None, rssi=None]
+>>> print(x.id1)
+1
+>>> print(x.id2)
+35
+>>> print(x.id3)
+69
+>>> print(x.id4)
+103
+>>> print(x.id_combined)
+19088743
+>>> print(x.unitcode)
+5
+>>> x.parse_id(0, "12345678:5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123456:54")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123456785")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Lighting3
@@ -268,6 +324,36 @@ Level 5
 0
 >>> print(x.battery)
 0
+>>> x = lowlevel.Lighting3()
+>>> x.parse_id(0, "1:234")
+>>> print(x)
+Lighting3 [subtype=Ikea Koppla, seqnbr=None, id=1:234, cmnd=None, battery=None, rssi=None]
+>>> print(x.system)
+1
+>>> print(x.channel1)
+52
+>>> print(x.channel2)
+2
+>>> print(x.channel)
+564
+>>> x.parse_id(0, "G:234")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "10234")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "1:23X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Lighting4
@@ -354,6 +440,24 @@ PT2262
 0
 >>> print(x.rssi)
 0
+>>> x = lowlevel.Lighting4()
+>>> x.parse_id(0, "123456")
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=None, cmd=123456, pulse=None, rssi=None]
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> x.parse_id(0, "12345X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Lighting5
@@ -442,6 +546,50 @@ Set level
 0
 >>> print(x.rssi)
 0
+>>> x = lowlevel.Lighting5()
+>>> x.parse_id(0, "123456:7")
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=None, id=123456:7, cmnd=None, level=None, rssi=None]
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> x.parse_id(0, "123456:X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345X:7")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345677")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "1234567:8")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345:8")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Lighting6
@@ -536,6 +684,50 @@ Group off
 0
 >>> print(x.rssi)
 0
+>>> x = lowlevel.Lighting6()
+>>> x.parse_id(0, "1234:A5")
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=None, id=1234:A5, cmnd=None, cmndseqnbr=None, rssi=None]
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> x.parse_id(0, "1234:AA")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123X:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
 
 
 Curtain1

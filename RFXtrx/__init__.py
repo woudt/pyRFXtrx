@@ -196,6 +196,36 @@ class LightingDevice(RFXtrxDevice):
 
 
 ###############################################################################
+# get_devide method
+###############################################################################
+
+def get_device(packettype, subtype, id_string):
+    """ Return a device base on its identifying values """
+    if packettype == 0x10:  # Lighting1
+        pkt = lowlevel.Lighting1()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    elif packettype == 0x11:  # Lighting2
+        pkt = lowlevel.Lighting2()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    elif packettype == 0x12:  # Lighting3
+        pkt = lowlevel.Lighting3()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    elif packettype == 0x14:  # Lighting5
+        pkt = lowlevel.Lighting5()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    elif packettype == 0x15:  # Lighting6
+        pkt = lowlevel.Lighting6()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    else:
+        raise ValueError("Unsupported packettype")
+
+
+###############################################################################
 # RFXtrxEvent class
 ###############################################################################
 
