@@ -166,10 +166,14 @@ class LightingDevice(RFXtrxDevice):
             # Supporting a dim level for X10 directly is not possible because
             # RFXtrx does not support sending extended commands
         elif self.packettype == 0x11:  # Lighting2
-            pkt = lowlevel.Lighting2()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x02, (level + 6) * 15 // 100)
-            transport.send(pkt.data)
+            if level == 0:
+                self.send_off(transport)
+            else:
+                pkt = lowlevel.Lighting2()
+                pkt.set_transmit(self.subtype, 0, self.id_combined,
+                                 self.unitcode, 0x02,
+                                 ((level + 6) * 16 // 100) - 1)
+                transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             raise ValueError("Dim level unsupported for Lighting3")
             # Should not be too hard to add dim level support for Lighting3
@@ -177,10 +181,14 @@ class LightingDevice(RFXtrxDevice):
             # commands. I just need someone to help me with defining a mapping
             # between a percentage and a level
         elif self.packettype == 0x14:  # Lighting5
-            pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x10, (level + 3) * 31 // 100)
-            transport.send(pkt.data)
+            if level == 0:
+                self.send_off(transport)
+            else:
+                pkt = lowlevel.Lighting5()
+                pkt.set_transmit(self.subtype, 0, self.id_combined,
+                                 self.unitcode, 0x10,
+                                 ((level + 3) * 32 // 100) - 1)
+                transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             raise ValueError("Dim level unsupported for Lighting6")
         else:
@@ -257,9 +265,9 @@ class ControlEvent(RFXtrxEvent):
                 or isinstance(pkt, lowlevel.Lighting3):
             self.values['Command'] = pkt.cmnd_string
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = pkt.level * 100 // 15
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
         if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
-            self.values['Dim level'] = pkt.level * 100 // 31
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
         self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
