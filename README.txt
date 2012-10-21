@@ -15,6 +15,9 @@ Install pySerial first::
 	$ sudo easy_install -U pyserial
 
 
+After that, see the examples in the examples directory
+
+
 Developers
 ==========
 
