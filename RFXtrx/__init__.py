@@ -263,6 +263,10 @@ class SensorEvent(RFXtrxEvent):
             self.values['Barometer'] = pkt.barometer
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
+        if isinstance(pkt, lowlevel.Wind):
+            self.values['Direction'] = pkt.direction
+            self.values['Average speed'] = pkt.average_speed
+            self.values['Gust'] = pkt.gust
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 

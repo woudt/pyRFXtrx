@@ -58,6 +58,10 @@ def parse(data):
         pkt = TempHumid()
         pkt.load_receive(data)
         return pkt
+    if data[1] == 0x56:
+        pkt = Wind()
+        pkt.load_receive(data)
+        return pkt
 
 
 ###############################################################################
@@ -1246,3 +1250,71 @@ class TempHumidBaro(SensorPacket):
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+###############################################################################
+# Wind class
+###############################################################################
+
+class Wind(SensorPacket):
+    """
+    Data class for the Wind packet type
+    """
+
+    TYPES = {0x01: 'WTGR800',
+             0x02: 'WGR800',
+             0x03: 'STR918, WGR918',
+             0x04: 'TFA',
+             }
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
+                "average_speed={4}, gust={5}, battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string, self.direction,
+                    self.average_speed, self.gust,
+                    self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Wind, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.direction = None
+        self.average_speed = None
+        self.gust = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.direction = data[6] * 256 + data[7]
+        self.average_speed = data[8] * 256.0 + data[9] / 10.0
+        self.gust = data[10] * 256.0 + data[11] / 10.0
+        
+        if self.subtype == 0x03:
+            self.battery = data[16] + 1 * 10   
+        else:
+            self.rssi_byte = data[16]
+            self.battery = self.rssi_byte & 0x0f
+            self.rssi = self.rssi_byte >> 4
+        
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
