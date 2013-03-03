@@ -26,6 +26,13 @@ RFXtrx.
 
 def parse(data):
     """ Parse a packet from a bytearray """
+    if data[0] == 0:
+        # null length packet - sometimes happens on initialization
+        return None
+    if data[1] == 0x01:
+        pkt = Status()
+        pkt.load_receive(data)
+        return pkt
     if data[1] == 0x10:
         pkt = Lighting1()
         pkt.load_receive(data)
@@ -85,6 +92,96 @@ class Packet(object):
         self.rssi_byte = None
         self.type_string = None
         self.id_string = None
+
+
+###############################################################################
+# Status class
+###############################################################################
+
+def _decode_flags(v, words):
+    words = words.split()
+    s = set()
+    for w in words:
+        if v % 2:
+            s.add(w)
+        v /= 2
+    return s
+
+class Status(Packet):
+    """
+    Data class for the Status packet type
+    """
+
+    TYPES = {
+        0x50: '310MHz',
+        0x51: '315MHz',
+        0x53: '433.92MHz',
+        0x55: '868.00MHz',
+        0x56: '868.00MHz FSK',
+        0x57: '868.30MHz',
+        0x58: '868.30MHz FSK',
+        0x59: '868.35MHz',
+        0x5A: '868.35MHz FSK',
+        0x5B: '868.95MHz'
+    }
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Status [subtype={0}, firmware={1}, devices={2}]") \
+            .format(self.type_string, self.firmware_version, self.devices)
+
+    def __init__(self):
+        """Constructor"""
+        super(Status, self).__init__()
+        self.tranceiver_type = None
+        self.firmware_version = None
+        self.devices = None
+
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x10
+            self.subtype = subtype
+            hcode = id_string[0:1]
+            for hcode_num in self.HOUSECODES:
+                if self.HOUSECODES[hcode_num] == hcode:
+                    self.housecode = hcode_num
+            self.unitcode = int(id_string[1:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+
+        self.tranceiver_type = data[5]
+        self.firmware_version = data[6]
+
+        devs = set()
+        devs.update(_decode_flags(data[7] / 0x80,
+            'undecoded'))
+        devs.update(_decode_flags(data[8],
+            'mertik lightwarerf hideki lacrosse fs20 proguard'))
+        devs.update(_decode_flags(data[9],
+            'x10 arc ac homeeasy ikeakoppla oregon ati visonic'))
+        self.devices = sorted(devs)
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        if self.tranceiver_type in self.TYPES:
+            self.type_string = self.TYPES[self.tranceiver_type]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = 'Unknown'
 
 
 ###############################################################################

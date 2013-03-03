@@ -20,7 +20,7 @@ along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name = 'pyRFXtrx',

@@ -39,6 +39,8 @@ class RFXtrxTransport(object):
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
                 return SensorEvent(pkt)
+            elif isinstance(pkt, lowlevel.Status):
+                return StatusEvent(pkt)
             else:
                 return ControlEvent(pkt)
 
@@ -307,3 +309,17 @@ class ControlEvent(RFXtrxEvent):
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
             type(self), self.device, sorted(self.values.items()))
+
+###############################################################################
+# Status class
+###############################################################################
+
+class StatusEvent(RFXtrxEvent):
+    """ Concrete class for status """
+
+    def __init__(self, pkt):
+        super(StatusEvent, self).__init__(pkt)
+
+    def __str__(self):
+        return "{0} device=[{1}]".format(
+            type(self), self.device)
