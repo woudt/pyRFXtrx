@@ -39,6 +39,8 @@ class RFXtrxTransport(object):
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
                 return SensorEvent(pkt)
+            elif isinstance(pkt, lowlevel.Status):
+                return StatusEvent(pkt)
             else:
                 return ControlEvent(pkt)
 
@@ -95,67 +97,44 @@ class LightingDevice(RFXtrxDevice):
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
 
-    def send_on(self, transport):
-        """ Send an 'On' command using the given transport """
+    def send_onoff(self, transport, on):
+        """ Send an 'On' or 'Off' command using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x01)
+                             on and 0x01 or 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+                             on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x10)
+                             on and 0x10 or 0x1a)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+                             on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x00, self.cmndseqnbr)
+                             self.unitcode, not on and 0x01 or 0x00, self.cmndseqnbr)
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
+    def send_on(self, transport):
+        """ Send an 'On' command using the given transport """
+        self.send_onoff(transport, True)
+
     def send_off(self, transport):
         """ Send an 'Off' command using the given transport """
-        if self.packettype == 0x10:  # Lighting1
-            pkt = lowlevel.Lighting1()
-            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x11:  # Lighting2
-            pkt = lowlevel.Lighting2()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x12:  # Lighting3
-            pkt = lowlevel.Lighting3()
-            pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x1a)
-            transport.send(pkt.data)
-        elif self.packettype == 0x14:  # Lighting5
-            pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x15:  # Lighting6
-            pkt = lowlevel.Lighting6()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x01, self.cmndseqnbr)
-            self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-            transport.send(pkt.data)
-        else:
-            raise ValueError("Unsupported packettype")
+        self.send_onoff(transport, False)
 
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
@@ -263,6 +242,10 @@ class SensorEvent(RFXtrxEvent):
             self.values['Barometer'] = pkt.barometer
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
+        if isinstance(pkt, lowlevel.Wind):
+            self.values['Direction'] = pkt.direction
+            self.values['Average speed'] = pkt.average_speed
+            self.values['Gust'] = pkt.gust
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
@@ -303,3 +286,17 @@ class ControlEvent(RFXtrxEvent):
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
             type(self), self.device, sorted(self.values.items()))
+
+###############################################################################
+# Status class
+###############################################################################
+
+class StatusEvent(RFXtrxEvent):
+    """ Concrete class for status """
+
+    def __init__(self, pkt):
+        super(StatusEvent, self).__init__(pkt)
+
+    def __str__(self):
+        return "{0} device=[{1}]".format(
+            type(self), self.device)

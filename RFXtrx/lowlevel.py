@@ -26,6 +26,13 @@ RFXtrx.
 
 def parse(data):
     """ Parse a packet from a bytearray """
+    if data[0] == 0:
+        # null length packet - sometimes happens on initialization
+        return None
+    if data[1] == 0x01:
+        pkt = Status()
+        pkt.load_receive(data)
+        return pkt
     if data[1] == 0x10:
         pkt = Lighting1()
         pkt.load_receive(data)
@@ -58,6 +65,10 @@ def parse(data):
         pkt = TempHumid()
         pkt.load_receive(data)
         return pkt
+    if data[1] == 0x56:
+        pkt = Wind()
+        pkt.load_receive(data)
+        return pkt
 
 
 ###############################################################################
@@ -81,6 +92,96 @@ class Packet(object):
         self.rssi_byte = None
         self.type_string = None
         self.id_string = None
+
+
+###############################################################################
+# Status class
+###############################################################################
+
+def _decode_flags(v, words):
+    words = words.split()
+    s = set()
+    for w in words:
+        if v % 2:
+            s.add(w)
+        v /= 2
+    return s
+
+class Status(Packet):
+    """
+    Data class for the Status packet type
+    """
+
+    TYPES = {
+        0x50: '310MHz',
+        0x51: '315MHz',
+        0x53: '433.92MHz',
+        0x55: '868.00MHz',
+        0x56: '868.00MHz FSK',
+        0x57: '868.30MHz',
+        0x58: '868.30MHz FSK',
+        0x59: '868.35MHz',
+        0x5A: '868.35MHz FSK',
+        0x5B: '868.95MHz'
+    }
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Status [subtype={0}, firmware={1}, devices={2}]") \
+            .format(self.type_string, self.firmware_version, self.devices)
+
+    def __init__(self):
+        """Constructor"""
+        super(Status, self).__init__()
+        self.tranceiver_type = None
+        self.firmware_version = None
+        self.devices = None
+
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x10
+            self.subtype = subtype
+            hcode = id_string[0:1]
+            for hcode_num in self.HOUSECODES:
+                if self.HOUSECODES[hcode_num] == hcode:
+                    self.housecode = hcode_num
+            self.unitcode = int(id_string[1:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+
+        self.tranceiver_type = data[5]
+        self.firmware_version = data[6]
+
+        devs = set()
+        devs.update(_decode_flags(data[7] / 0x80,
+            'undecoded'))
+        devs.update(_decode_flags(data[8],
+            'mertik lightwarerf hideki lacrosse fs20 proguard'))
+        devs.update(_decode_flags(data[9],
+            'x10 arc ac homeeasy ikeakoppla oregon ati visonic'))
+        self.devices = sorted(devs)
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        if self.tranceiver_type in self.TYPES:
+            self.type_string = self.TYPES[self.tranceiver_type]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = 'Unknown'
 
 
 ###############################################################################
@@ -1246,3 +1347,71 @@ class TempHumidBaro(SensorPacket):
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+###############################################################################
+# Wind class
+###############################################################################
+
+class Wind(SensorPacket):
+    """
+    Data class for the Wind packet type
+    """
+
+    TYPES = {0x01: 'WTGR800',
+             0x02: 'WGR800',
+             0x03: 'STR918, WGR918',
+             0x04: 'TFA',
+             }
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
+                "average_speed={4}, gust={5}, battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string, self.direction,
+                    self.average_speed, self.gust,
+                    self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Wind, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.direction = None
+        self.average_speed = None
+        self.gust = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.direction = data[6] * 256 + data[7]
+        self.average_speed = data[8] * 256.0 + data[9] / 10.0
+        self.gust = data[10] * 256.0 + data[11] / 10.0
+        
+        if self.subtype == 0x03:
+            self.battery = data[16] + 1 * 10   
+        else:
+            self.rssi_byte = data[16]
+            self.battery = self.rssi_byte & 0x0f
+            self.rssi = self.rssi_byte >> 4
+        
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
