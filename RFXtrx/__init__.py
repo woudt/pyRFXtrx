@@ -97,67 +97,44 @@ class LightingDevice(RFXtrxDevice):
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
 
-    def send_on(self, transport):
-        """ Send an 'On' command using the given transport """
+    def send_onoff(self, transport, on):
+        """ Send an 'On' or 'Off' command using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x01)
+                             on and 0x01 or 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+                             on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x10)
+                             on and 0x10 or 0x1a)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+                             on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x00, self.cmndseqnbr)
+                             self.unitcode, not on and 0x01 or 0x00, self.cmndseqnbr)
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
+    def send_on(self, transport):
+        """ Send an 'On' command using the given transport """
+        self.send_onoff(transport, True)
+
     def send_off(self, transport):
         """ Send an 'Off' command using the given transport """
-        if self.packettype == 0x10:  # Lighting1
-            pkt = lowlevel.Lighting1()
-            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x11:  # Lighting2
-            pkt = lowlevel.Lighting2()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x12:  # Lighting3
-            pkt = lowlevel.Lighting3()
-            pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x1a)
-            transport.send(pkt.data)
-        elif self.packettype == 0x14:  # Lighting5
-            pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
-            transport.send(pkt.data)
-        elif self.packettype == 0x15:  # Lighting6
-            pkt = lowlevel.Lighting6()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x01, self.cmndseqnbr)
-            self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-            transport.send(pkt.data)
-        else:
-            raise ValueError("Unsupported packettype")
+        self.send_onoff(transport, False)
 
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
