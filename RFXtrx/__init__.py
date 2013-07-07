@@ -260,7 +260,7 @@ class SensorEvent(RFXtrxEvent):
             self.values['Humidity status numeric'] = pkt.humidity_status
         if isinstance(pkt, lowlevel.Baro) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Barometer'] = pkt.barometer
+            self.values['Barometer'] = pkt.baro
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
         self.values['Battery numeric'] = pkt.battery

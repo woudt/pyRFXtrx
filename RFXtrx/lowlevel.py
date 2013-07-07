@@ -58,6 +58,10 @@ def parse(data):
         pkt = TempHumid()
         pkt.load_receive(data)
         return pkt
+    if data[1] == 0x54:
+        pkt = TempHumidBaro()
+        pkt.load_receive(data)
+        return pkt
 
 
 ###############################################################################
