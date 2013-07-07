@@ -58,6 +58,14 @@ def parse(data):
         pkt = TempHumid()
         pkt.load_receive(data)
         return pkt
+    if data[1] == 0x54:
+        pkt = TempHumidBaro()
+        pkt.load_receive(data)
+        return pkt
+    if data[1] == 0x55:
+        pkt = RainGauge()
+        pkt.load_receive(data)
+        return pkt
 
 
 ###############################################################################
@@ -1246,3 +1254,64 @@ class TempHumidBaro(SensorPacket):
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+
+#################
+#
+##################
+
+class RainGauge(SensorPacket):
+
+    TYPES = {
+        0x01: "RGR126/682/918",
+        0x02: "PCR800",
+        0x03: "TFA",
+        0x04: "UPM RG700",
+        0x05: "WS2300"}
+
+    def __init__(self):
+        """Constructor"""
+        super(RainGauge, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.rainrate1 = None
+        self.rainrate2 = None
+        self.rainrate = None
+        self.raintotal1 = None
+        self.raintotal2 = None
+        self.raintotal3 = None
+        self.raintotal = None
+        self.battery = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.rainrate1 = data[6]
+        self.rainrate2 = data[7]
+        self.rainrate = (self.rainrate1 << 8) + self.rainrate2
+        self.raintotal1 = data[8]
+        self.raintotal2 = data[9]
+        self.raintotal3 = data[10]
+        self.raintotal = float((self.raintotal1 << 16) +
+                               (self.raintotal2 << 8) +
+                               self.raintotal3) / 10
+        self.rssi_byte = data[11]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
