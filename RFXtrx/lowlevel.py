@@ -1459,10 +1459,11 @@ class Wind(SensorPacket):
 
     def __str__(self):
         return ("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
-                "average_speed={4}, gust={5}, battery={6}, rssi={7}]") \
+                "average_speed={4}, gust={5}, temperature={6}, chill={7}, " +
+                "battery={8}, rssi={9}]") \
             .format(self.type_string, self.seqnbr, self.id_string,
                     self.direction, self.average_speed, self.gust,
-                    self.battery, self.rssi)
+                    self.temperature, self.chill, self.battery, self.rssi)
 
     def __init__(self):
         """Constructor"""
@@ -1472,6 +1473,8 @@ class Wind(SensorPacket):
         self.direction = None
         self.average_speed = None
         self.gust = None
+        self.temperature = None
+        self.chill = None
         self.battery = None
         self.rssi = None
 
@@ -1487,6 +1490,10 @@ class Wind(SensorPacket):
         self.direction = data[6] * 256 + data[7]
         self.average_speed = data[8] * 256.0 + data[9] / 10.0
         self.gust = data[10] * 256.0 + data[11] / 10.0
+        self.temperature = (-1 * (data[12] >> 7)) * (
+                (data[12] & 0x7f) * 256.0 + data[13]) / 10.0
+        self.chill = (-1 * (data[14] >> 7)) * (
+                (data[14] & 0x7f) * 256.0 + data[15]) / 10.0
         if self.subtype == 0x03:
             self.battery = data[16] + 1 * 10   
         else:
