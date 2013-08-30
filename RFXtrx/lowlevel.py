@@ -193,6 +193,7 @@ class Lighting1(Packet):
              0x05: 'IMPULS',
              0x06: 'RisingSun',
              0x07: 'Philips SBC',
+             0x08: 'Energenie',
              }
     """
     Mapping of numeric subtype values to strings, used in type_string
@@ -667,6 +668,8 @@ class Lighting5(Packet):
     TYPES = {0x00: 'LightwaveRF, Siemens',
              0x01: 'EMW100 GAO/Everflourish',
              0x02: 'BBSB new types',
+             0x03: 'MDREMOTE LED dimmer',
+             0x04: 'Conrad RSL2',
              }
     """
     Mapping of numeric subtype values to strings, used in type_string
@@ -709,10 +712,26 @@ class Lighting5(Packet):
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
-    COMMANDS_02 = {0x00: 'Off',
-                   0x01: 'On',
-                   0x02: 'Group off',
-                   0x03: 'Group on',
+    COMMANDS_02_04 = {0x00: 'Off',
+                      0x01: 'On',
+                      0x02: 'Group off',
+                      0x03: 'Group on',
+                      }
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
+    """
+
+    COMMANDS_03 = {0x00: 'Power',
+                   0x01: 'Light',
+                   0x02: 'Bright',
+                   0x03: 'Dim',
+                   0x04: '100%',
+                   0x05: '50%',
+                   0x06: '25%',
+                   0x07: 'Mode+',
+                   0x08: 'Speed-',
+                   0x09: 'Speed+',
+                   0x0a: 'Mode-',
                    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
@@ -813,9 +832,13 @@ class Lighting5(Packet):
                 self.cmnd_string = self.COMMANDS_00[self.cmnd]
             elif self.subtype == 0x01 and self.cmnd in self.COMMANDS_01:
                 self.cmnd_string = self.COMMANDS_01[self.cmnd]
-            elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02:
-                self.cmnd_string = self.COMMANDS_02[self.cmnd]
-            elif self.subtype >= 0x03 and self.cmnd in self.COMMANDS_XX:
+            elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02_04:
+                self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
+            elif self.subtype == 0x03 and self.cmnd in self.COMMANDS_03:
+                self.cmnd_string = self.COMMANDS_03[self.cmnd]
+            elif self.subtype == 0x04 and self.cmnd in self.COMMANDS_02_04:
+                self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
+            elif self.subtype >= 0x05 and self.cmnd in self.COMMANDS_XX:
                 self.cmnd_string = self.COMMANDS_XX[self.cmnd]
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
@@ -1123,10 +1146,11 @@ class TempHumid(SensorPacket):
              0x03: 'RTGR328',
              0x04: 'THGR328',
              0x05: 'WTGR800',
-             0x06: 'THGR918, THGRN228, THGN500',
+             0x06: 'THGR918/928, THGRN228, THGN500',
              0x07: 'TFA TS34C, Cresta',
              0x08: 'WT260,WT260H,WT440H,WT450,WT450H',
              0x09: 'Viking 02035,02038',
+             0x0a: 'Rubicson',
              }
     """
     Mapping of numeric subtype values to strings, used in type_string
@@ -1352,7 +1376,9 @@ class Rain(SensorPacket):
         0x02: "PCR800",
         0x03: "TFA",
         0x04: "UPM RG700",
-        0x05: "WS2300"}
+        0x05: "WS2300",
+        0x06: "La Crosse TX5"
+        }
 
     def __str__(self):
         return ("Rain [subtype={0}, seqnbr={1}, id={2}, rainrate={3}, " +
@@ -1422,8 +1448,10 @@ class Wind(SensorPacket):
 
     TYPES = {0x01: 'WTGR800',
              0x02: 'WGR800',
-             0x03: 'STR918, WGR918',
+             0x03: 'STR918, WGR918, WGR928',
              0x04: 'TFA',
+             0x05: 'UPM WDS500',
+             0x06: 'WS2300',
              }
     """
     Mapping of numeric subtype values to strings, used in type_string
