@@ -246,7 +246,7 @@ class SensorEvent(RFXtrxEvent):
             self.values['Direction'] = pkt.direction
             self.values['Average speed'] = pkt.average_speed
             self.values['Gust'] = pkt.gust
-        if isinstance(pkt, lowlevel.RainGauge):
+        if isinstance(pkt, lowlevel.Rain):
             self.values['Rain rate'] = pkt.rainrate
             self.values['Rain total'] = pkt.raintotal
         self.values['Battery numeric'] = pkt.battery

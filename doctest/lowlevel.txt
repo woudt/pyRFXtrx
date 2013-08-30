@@ -1019,6 +1019,54 @@ BTHR918
 
 Rain
 ----
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Rain()
+>>> print(x)
+Rain [subtype=None, seqnbr=None, id=None, rainrate=None, raintotal=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x0b, 0x55, 0x02, 0x03, 0x12, 0x34, 0x02, 0x50, 0x01, 0x23, 0x45, 0x57]))
+>>> print(x)
+Rain [subtype=PCR800, seqnbr=3, id=12:34, rainrate=5.92, raintotal=7456.5, battery=7, rssi=5]
+>>> 
+>>> print(list(x.data))
+[11, 85, 2, 3, 18, 52, 2, 80, 1, 35, 69, 87]
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+85
+>>> print(x.subtype)
+2
+>>> print(x.type_string)
+PCR800
+>>> print(x.seqnbr)
+3
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_string)
+12:34
+>>> print(x.rainrate1)
+2
+>>> print(x.rainrate2)
+80
+>>> print(x.rainrate)
+5.92
+>>> print(x.raintotal1)
+1
+>>> print(x.raintotal2)
+35
+>>> print(x.raintotal3)
+69
+>>> print(x.raintotal)
+7456.5
+>>> print(x.rssi_byte)
+87
+>>> print(x.rssi)
+5
+>>> print(x.battery)
+7
+
 
 Wind
 ----

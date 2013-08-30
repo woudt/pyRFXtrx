@@ -1342,10 +1342,10 @@ class TempHumidBaro(SensorPacket):
 
 
 ###############################################################################
-# RainGauge class
+# Rain class
 ###############################################################################
 
-class RainGauge(SensorPacket):
+class Rain(SensorPacket):
 
     TYPES = {
         0x01: "RGR126/682/918",
@@ -1354,9 +1354,15 @@ class RainGauge(SensorPacket):
         0x04: "UPM RG700",
         0x05: "WS2300"}
 
+    def __str__(self):
+        return ("Rain [subtype={0}, seqnbr={1}, id={2}, rainrate={3}, " +
+                "raintotal={4}, battery={5}, rssi={6}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.rainrate, self.raintotal, self.battery, self.rssi)
+
     def __init__(self):
         """Constructor"""
-        super(RainGauge, self).__init__()
+        super(Rain, self).__init__()
         self.id1 = None
         self.id2 = None
         self.rainrate1 = None
@@ -1380,6 +1386,8 @@ class RainGauge(SensorPacket):
         self.rainrate1 = data[6]
         self.rainrate2 = data[7]
         self.rainrate = (self.rainrate1 << 8) + self.rainrate2
+        if self.subtype == 2:
+            self.rainrate = float(self.rainrate) / 100
         self.raintotal1 = data[8]
         self.raintotal2 = data[9]
         self.raintotal3 = data[10]
@@ -1424,8 +1432,8 @@ class Wind(SensorPacket):
     def __str__(self):
         return ("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
                 "average_speed={4}, gust={5}, battery={6}, rssi={7}]") \
-            .format(self.type_string, self.seqnbr, self.id_string, self.direction,
-                    self.average_speed, self.gust,
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.direction, self.average_speed, self.gust,
                     self.battery, self.rssi)
 
     def __init__(self):
