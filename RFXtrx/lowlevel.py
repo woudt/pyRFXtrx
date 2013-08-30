@@ -112,7 +112,7 @@ def _decode_flags(v, words):
     for w in words:
         if v % 2:
             s.add(w)
-        v /= 2
+        v//= 2
     return s
 
 class Status(Packet):
@@ -146,22 +146,6 @@ class Status(Packet):
         self.tranceiver_type = None
         self.firmware_version = None
         self.devices = None
-
-    def parse_id(self, subtype, id_string):
-        """Parse a string id into individual components"""
-        try:
-            self.packettype = 0x10
-            self.subtype = subtype
-            hcode = id_string[0:1]
-            for hcode_num in self.HOUSECODES:
-                if self.HOUSECODES[hcode_num] == hcode:
-                    self.housecode = hcode_num
-            self.unitcode = int(id_string[1:])
-            self._set_strings()
-        except:
-            raise ValueError("Invalid id_string")
-        if self.id_string != id_string:
-            raise ValueError("Invalid id_string")
 
     def load_receive(self, data):
         """Load data from a bytearray"""
