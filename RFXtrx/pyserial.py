@@ -38,6 +38,8 @@ class PySerialTransport(RFXtrxTransport):
         while True:
             data = self.serial.read()
             if (len(data) > 0):
+                if data == '\x00':
+                    continue
                 pkt = bytearray(data)
                 data = self.serial.read(pkt[0])
                 pkt.extend(bytearray(data))

@@ -30,14 +30,20 @@ from twisted.internet.serialport import SerialPort
 from . import RFXtrxTransport
 
 
+class FixedSerialPort(SerialPort):
+    def connectionLost(self, reason):
+        SerialPort.connectionLost(self, reason)
+        self.protocol.connectionLost(reason)
+
 class _TwistedSerialProtocol(Protocol):
     """ Twisted Protocol implementation, used internally by
         TwistedSerialTransport
     """
 
-    def __init__(self, receive_callback, reset_callback):
+    def __init__(self, receive_callback, reset_callback, disconnected_callback):
         self.receive_callback = receive_callback
         self.reset_callback = reset_callback
+        self.disconnected_callback = disconnected_callback
         self.buffer = bytearray([])
 
     def dataReceived(self, data):
@@ -52,15 +58,21 @@ class _TwistedSerialProtocol(Protocol):
         """ Called by Twisted when the connection is made """
         self.reset_callback()
 
+    def connectionLost(self, reason):
+        if self.disconnected_callback:
+            self.disconnected_callback()
 
 class TwistedSerialTransport(RFXtrxTransport):
     """ Transport implementation for the Twisted framework """
 
-    def __init__(self, port, receive_callback, debug=False):
+    def __init__(self, port, receive_callback, disconnected_callback=None, debug=False):
         self.debug = debug
         self.receive_callback = receive_callback
-        self.protocol = _TwistedSerialProtocol(self._receive, self._reset)
-        self.serial = SerialPort(self.protocol, port, reactor)
+        self.protocol = _TwistedSerialProtocol(self._receive,
+            self._reset,
+            disconnected_callback)
+        self.port = port
+        self.serial = FixedSerialPort(self.protocol, self.port, reactor)
         self.serial.setBaudRate(38400)
 
     def _receive(self, data):
