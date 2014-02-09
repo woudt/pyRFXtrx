@@ -21,7 +21,7 @@
 This module provides the base implementation for pyRFXtrx
 """
 # pylint: disable=R0903
-
+import datetime
 from RFXtrx import lowlevel
 
 
@@ -213,6 +213,7 @@ class RFXtrxEvent(object):
 
     def __init__(self, device):
         self.device = device
+	self.created_tm = datetime.datetime.now()
 
 
 ###############################################################################
