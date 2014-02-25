@@ -70,7 +70,7 @@ def parse(data):
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x55:
-        pkt = RainGauge()
+        pkt = Rain()
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x56:
@@ -1495,7 +1495,7 @@ class Wind(SensorPacket):
         self.chill = (-1 * (data[14] >> 7)) * (
                 (data[14] & 0x7f) * 256.0 + data[15]) / 10.0
         if self.subtype == 0x03:
-            self.battery = data[16] + 1 * 10   
+            self.battery = data[16] + 1 * 10
         else:
             self.rssi_byte = data[16]
             self.battery = self.rssi_byte & 0x0f
