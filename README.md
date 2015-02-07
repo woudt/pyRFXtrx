@@ -5,8 +5,6 @@ pyRFXtrx
 A Python library to communicate with the RFXtrx family of devices
 from http://www.rfxcom.com/
 
-See https://github.com/woudt/pyRFXtrx for the latest version.
-
 
 Using
 =====
@@ -35,8 +33,6 @@ Run pylint and pep8 checks on the source code:
 
 Licensing
 =========
-
-Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
 
 pyRFXtrx is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
