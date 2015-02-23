@@ -102,6 +102,37 @@ class Packet(object):
         self.id_string = None
 
 
+    def has_value(self, datatype):
+        """Return True if the sensor supports the given data type.
+        sensor.has_value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.has_temperature().
+        """
+        return hasattr(self, dataype)
+
+    def value(self, datatype):
+        """Return the :class:`SensorValue` for the given data type.
+        sensor.value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.temperature().
+        """
+        return getattr(self, datatype, None)
+
+    def __getattr__(self, name):
+        typename = name.replace("has_", "", 1)
+        if not name == typename:
+            return lambda: self.has_value(datatype)
+        raise AttributeError(name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Sensor):
+            return False
+        return self.id_string == other.id_string
+
+    def __repr__(self):  
+        return(self.id_string + ": " + str(self.temperature))
+
+
+
+
 ###############################################################################
 # Status class
 ###############################################################################
