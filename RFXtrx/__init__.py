@@ -22,27 +22,44 @@ This module provides the base implementation for pyRFXtrx
 """
 # pylint: disable=R0903
 
-from RFXtrx import lowlevel
 
+from serial import Serial
+from time import sleep
+from . import lowlevel
 
-###############################################################################
-# RFXtrxTransport class
-###############################################################################
+import time
+from threading import Thread
 
-class RFXtrxTransport(object):
-    """ Abstract superclass for all transport mechanisms """
+class Core(object):
+    """The main class for rfxcom-py.
+    Has methods for sensors. 
+    """
 
-    @staticmethod
-    def parse(data):
-        """ Parse the given data and return an RFXtrxEvent """
-        pkt = lowlevel.parse(data)
-        if pkt is not None:
-            if isinstance(pkt, lowlevel.SensorPacket):
-                return SensorEvent(pkt)
-            elif isinstance(pkt, lowlevel.Status):
-                return StatusEvent(pkt)
-            else:
-                return ControlEvent(pkt)
+    def __init__(self, device, event_callback=None, debug=False):
+        """Create a new RfxtrxCore instance. """
+    
+        self._sensors = {}
+        self._event_callback = event_callback;
+  
+        self.thread = Thread(target = self._connect, args = (device, debug) )
+        self.thread.start()
+        
+
+    def _connect(self, device, debug):
+        self.transport = PySerialTransport(device, debug)
+        self.transport.reset()
+        while True:
+            event = self.transport.receive_blocking()
+            if isinstance(event, SensorEvent):
+                if self._event_callback:
+                    self._event_callback(event)
+                self._sensors[event.device.id_string] = event.device
+ 
+    def sensors(self):
+        """Return all found sensors.
+        :return: dict of :class:`Sensor` instances.
+        """
+        return self._sensors
 
 
 ###############################################################################
@@ -305,3 +322,64 @@ class StatusEvent(RFXtrxEvent):
     def __str__(self):
         return "{0} device=[{1}]".format(
             type(self), self.device)
+
+
+
+###############################################################################
+# PySerialTransport class
+###############################################################################
+
+class PySerialTransport():
+    """ Implementation of a transport using PySerial """
+
+    def __init__(self, port, debug=False):
+        self.serial = Serial(port, 38400, timeout=0.1)
+        self.debug = debug
+
+    def receive_blocking(self):
+        """ Wait until a packet is received and return with an RFXtrxEvent """
+        while True:
+            data = self.serial.read()
+            if (len(data) > 0):
+                if data == '\x00':
+                    continue
+                pkt = bytearray(data)
+                data = self.serial.read(pkt[0])
+                pkt.extend(bytearray(data))
+                if self.debug:
+                    print("Recv: " + " ".join("0x{0:02x}".format(x)
+                                              for x in pkt))
+                return self.parse(pkt)
+
+    @staticmethod
+    def parse(data):
+        """ Parse the given data and return an RFXtrxEvent """
+        pkt = lowlevel.parse(data)
+        if pkt is not None:
+            if isinstance(pkt, lowlevel.SensorPacket):
+                return SensorEvent(pkt)
+            elif isinstance(pkt, lowlevel.Status):
+                return StatusEvent(pkt)
+            else:
+                return ControlEvent(pkt)
+
+
+    def send(self, data):
+        """ Send the given packet """
+        if isinstance(data, bytearray):
+            pkt = data
+        elif isinstance(data, str) or isinstance(data, bytes):
+            pkt = bytearray(data)
+        else:
+            raise ValueError("Invalid type")
+        if self.debug:
+            print ("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+        self.serial.write(pkt)
+
+    def reset(self):
+        """ Reset the RFXtrx """
+        self.send(b'\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        sleep(0.3)  # Should work with 0.05, but not for me
+        self.serial.flushInput()
+        self.send(b'\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        return self.receive_blocking()

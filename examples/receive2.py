@@ -21,7 +21,7 @@
 import sys
 sys.path.append("../")
 
-import pyRFXtrx as RFXtrx
+from RFXtrx.pyserial import PySerialTransport
 import time
 
 def main():
