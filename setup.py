@@ -23,8 +23,8 @@ If not, see <http://www.gnu.org/licenses/>.
 from setuptools import setup
 
 setup(
-    name = 'pyRFXtrx',
-    packages = ['pyRFXtrx'],
+    name = 'RFXtrx',
+    packages = ['RFXtrx'],
     version = '0.15',
     description = 'a library to communicate with the RFXtrx family of devices',
     author='Edwin Woudt',
