@@ -24,12 +24,12 @@ from setuptools import setup
 
 setup(
     name = 'pyRFXtrx',
-    packages = ['RFXtrx'],
-    version = '0.1',
+    packages = ['pyRFXtrx'],
+    version = '0.15',
     description = 'a library to communicate with the RFXtrx family of devices',
     author='Edwin Woudt',
     author_email='edwin@woudt.nl',
-    url='https://github.com/woudt/pyRFXtrx',
+    url='https://github.com/Danielhiversen/pyRFXtrx',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Other Environment',
