@@ -25,6 +25,7 @@ from setuptools import setup
 setup(
     name = 'RFXtrx',
     packages = ['RFXtrx'],
+    install_requires=['pyserial>=2.7'],
     version = '0.15',
     description = 'a library to communicate with the RFXtrx family of devices',
     author='Edwin Woudt',
