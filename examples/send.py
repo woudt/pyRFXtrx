@@ -18,6 +18,10 @@
 # along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 # If not, see <http://www.gnu.org/licenses/>.
 
+
+NOT TESTED
+
+
 from RFXtrx.pyserial import PySerialTransport
 from RFXtrx import LightingDevice
 from time import sleep

@@ -21,15 +21,16 @@
 import sys
 sys.path.append("../")
 
-from RFXtrx.pyserial import PySerialTransport
+import RFXtrx 
+import time
 
 def main():
-    transport = PySerialTransport('/dev/serial/by-id/usb-RFXCOM_RFXtrx433_A1Y0NJGR-if00-port0', debug=True)
-    transport.reset()
+    core = RFXtrx.Core('/dev/serial/by-id/usb-RFXCOM_RFXtrx433_A1Y0NJGR-if00-port0', debug=True)
+
 
     while True:
-        print(transport.receive_blocking())
-
+        print(core.sensors())
+        time.sleep(2)
 
 if __name__ == "__main__":
     try:
