@@ -127,8 +127,11 @@ class Packet(object):
             return False
         return self.id_string == other.id_string
 
-    def __repr__(self):  
-        return(self.id_string + ": " + str(self.temperature))
+    def __str__(self):
+        (self.id_string + ": " + str(self.temperature))
+
+    def __repr__(self):
+        return self.__str__()
 
 
 
@@ -381,6 +384,9 @@ class Lighting2(Packet):
                 "level={4}, rssi={5}]") \
             .format(self.type_string, self.seqnbr, self.id_string,
                     self.cmnd_string, self.level, self.rssi)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __init__(self):
         """Constructor"""
