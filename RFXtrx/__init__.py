@@ -50,7 +50,7 @@ class Core(object):
         self.transport.reset()
         while True:
             event = self.transport.receive_blocking()
-            if isinstance(event, SensorEvent):
+            if isinstance(event, RFXtrxEvent):
                 if self._event_callback:
                     self._event_callback(event)
                 self._sensors[event.device.id_string] = event.device
