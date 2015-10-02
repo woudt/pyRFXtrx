@@ -230,6 +230,7 @@ class RFXtrxEvent(object):
 
     def __init__(self, device):
         self.device = device
+        #self.data = None  # Previous signal
 
 
 ###############################################################################
@@ -357,11 +358,15 @@ class PySerialTransport():
         pkt = lowlevel.parse(data)
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
-                return SensorEvent(pkt)
+                obj = SensorEvent(pkt)
             elif isinstance(pkt, lowlevel.Status):
-                return StatusEvent(pkt)
+                obj = StatusEvent(pkt)
             else:
-                return ControlEvent(pkt)
+                obj = ControlEvent(pkt)
+
+            # Store the latest RF signal data
+            obj.data = data
+            return obj
 
 
     def send(self, data):
