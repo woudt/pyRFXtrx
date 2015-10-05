@@ -3,7 +3,7 @@ pyRFXtrx
 ========
 
 A Python library to communicate with the RFXtrx family of devices
-from http://www.rfxcom.com/
+from http://www.rfxcom.com/. Works with http://www.home-assistant.io
 
 
 Using
