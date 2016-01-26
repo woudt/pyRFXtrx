@@ -70,7 +70,7 @@ def parse(data):
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x55:
-        pkt = RainGauge()
+        pkt = Rain()
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x56:
