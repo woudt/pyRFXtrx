@@ -210,11 +210,23 @@ class Status(Packet):
             self.type_string = 'Unknown'
 
 
+
+class ControlPacket(Packet):
+    """ Abstract superclass for all control packets """
+
+    def __init__(self):
+        """Constructor"""
+        super(ControlPacket, self).__init__()
+        self.turn_on = False
+        self.turn_off = False        
+        self.dim_level = None
+
+
 ###############################################################################
 # Lighting1 class
 ###############################################################################
 
-class Lighting1(Packet):
+class Lighting1(ControlPacket):
     """
     Data class for the Lighting1 packet type
     """
@@ -338,6 +350,8 @@ class Lighting1(Packet):
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
+                self.turn_on = self.cmnd_string == 'On'
+                self.turn_off = self.cmnd_string == 'Off'
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
@@ -346,7 +360,7 @@ class Lighting1(Packet):
 # Lighting2 class
 ###############################################################################
 
-class Lighting2(Packet):
+class Lighting2(ControlPacket):
     """
     Data class for the Lighting2 packet type
     """
@@ -473,6 +487,17 @@ class Lighting2(Packet):
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
+                if self.cmnd_string == 'On':
+                    self.dim_level = 100
+                elif self.cmnd_string == 'Off':
+                    self.dim_level = 0
+                elif self.cmnd_string == 'Set level':
+                    self.dim_level = min((self.level+1)*100//16-6,0)                        
+
+                if self.dim_level == 0:                
+                    self.turn_off = True
+                else:
+                    self.turn_on = True
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
@@ -481,7 +506,7 @@ class Lighting2(Packet):
 # Lighting3 class
 ###############################################################################
 
-class Lighting3(Packet):
+class Lighting3(ControlPacket):
     """
     Data class for the Lighting3 packet type
     """
@@ -592,6 +617,8 @@ class Lighting3(Packet):
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
+                self.turn_on = self.cmnd_string == 'On'
+                self.turn_off = self.cmnd_string == 'Off'
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
@@ -600,7 +627,7 @@ class Lighting3(Packet):
 # Lighting4 class
 ###############################################################################
 
-class Lighting4(Packet):
+class Lighting4(ControlPacket):
     """
     Data class for the Lighting4 packet type
     """
@@ -697,7 +724,7 @@ class Lighting4(Packet):
 # Lighting5 class
 ###############################################################################
 
-class Lighting5(Packet):
+class Lighting5(ControlPacket):
     """
     Data class for the Lighting5 packet type
     """
@@ -873,6 +900,18 @@ class Lighting5(Packet):
                 self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
             elif self.subtype == 0x03 and self.cmnd in self.COMMANDS_03:
                 self.cmnd_string = self.COMMANDS_03[self.cmnd]
+                if self.cmnd_string == 'Light':
+                    self.dim_level = 100
+                elif self.cmnd_string == 'Power':
+                    self.dim_level = 0
+                elif self.cmnd_string == 'Dim':
+                    self.dim_level = min((self.level+1)*100//32-3,0)                    
+                elif self.cmnd_string == '100%': 
+                    self.dim_level = 100
+                elif self.cmnd_string == '50%': 
+                    self.dim_level = 50
+                elif self.cmnd_string == '25%': 
+                    self.dim_level = 25
             elif self.subtype == 0x04 and self.cmnd in self.COMMANDS_02_04:
                 self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
             elif self.subtype >= 0x05 and self.cmnd in self.COMMANDS_XX:
@@ -880,12 +919,22 @@ class Lighting5(Packet):
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
+            if self.cmnd_string == 'On':
+                self.dim_level = 100
+            elif self.cmnd_string == 'Off':
+                self.dim_level = 0
+
+            if self.dim_level == 0:                
+                self.turn_off = True
+            else:
+                self.turn_on = True
+
 
 ###############################################################################
 # Lighting6 class
 ###############################################################################
 
-class Lighting6(Packet):
+class Lighting6(ControlPacket):
     """
     Data class for the Lighting6 packet type
     """
@@ -997,6 +1046,8 @@ class Lighting6(Packet):
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
+                self.turn_on = self.cmnd_string == 'On'
+                self.turn_off = self.cmnd_string == 'Off'
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
 
