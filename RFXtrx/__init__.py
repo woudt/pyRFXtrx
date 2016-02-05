@@ -27,7 +27,6 @@ from serial import Serial
 from time import sleep
 from . import lowlevel
 
-import time
 from threading import Thread
 
 class Core(object):
@@ -94,7 +93,7 @@ class RFXtrxDevice(object):
 class LightingDevice(RFXtrxDevice):
     """ Concrete class for a lighting device """
 
-    def __init__(self, pkt):
+    def __init__(self, pkt,dimmable=False):
         super(LightingDevice, self).__init__(pkt)
         if isinstance(pkt, lowlevel.Lighting1):
             self.housecode = pkt.housecode
@@ -113,6 +112,7 @@ class LightingDevice(RFXtrxDevice):
             self.groupcode = pkt.groupcode
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
+        self.dimmable = dimmable
 
     def send_onoff(self, transport, on):
         """ Send an 'On' or 'Off' command using the given transport """
@@ -285,26 +285,30 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+        self.values = {}
+        self.values['Command'] = pkt.value('cmnd_string')
+
+        dimmable = True
+        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
+        elif isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
+        else:
+            dimmable = False
+
+        self.values['Rssi numeric'] = pkt.rssi
+
+
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
                 or isinstance(pkt, lowlevel.Lighting5) \
                 or isinstance(pkt, lowlevel.Lighting6):
-            device = LightingDevice(pkt)
+            device = LightingDevice(pkt,dimmable)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
 
-        self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
-            self.values['Command'] = pkt.cmnd_string
-        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
-        if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
-        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
