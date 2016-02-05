@@ -107,7 +107,7 @@ class Packet(object):
         sensor.has_value(RFXCOM_TEMPERATURE) is identical to calling
         sensor.has_temperature().
         """
-        return hasattr(self, dataype)
+        return hasattr(self, datatype)
 
     def value(self, datatype):
         """Return the :class:`SensorValue` for the given data type.
