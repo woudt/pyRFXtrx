@@ -271,6 +271,12 @@ class SensorEvent(RFXtrxEvent):
             self.values['Chill'] = pkt.chill
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
+        if isinstance(pkt, lowlevel.Energy):
+            self.values['Energy usage'] = pkt.currentwatt
+            self.values['Total usage'] = pkt.totalwatts
+            self.values['Count'] = pkt.count
+        self.values['Battery numeric'] = pkt.battery
+        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
