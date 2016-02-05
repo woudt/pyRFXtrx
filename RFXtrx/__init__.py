@@ -296,10 +296,11 @@ class ControlEvent(RFXtrxEvent):
         self.values = {}
         self.values['Command'] = pkt.value('cmnd_string')
 
-        dimmable = True
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
+            dimmable = True
             self.values['Dim level'] = (pkt.level + 1) * 100 // 16
         elif isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            dimmable = True
             self.values['Dim level'] = (pkt.level + 1) * 100 // 32
         else:
             dimmable = False
