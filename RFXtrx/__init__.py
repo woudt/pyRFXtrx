@@ -27,7 +27,6 @@ from serial import Serial
 from time import sleep
 from . import lowlevel
 
-import time
 from threading import Thread
 
 class Core(object):
@@ -88,14 +87,14 @@ class RFXtrxDevice(object):
 
 
 ###############################################################################
-# LightingDevice class
+# SwitchDevice class
 ###############################################################################
 
-class LightingDevice(RFXtrxDevice):
-    """ Concrete class for a lighting device """
+class SwitchDevice(RFXtrxDevice):
+    """ Concrete class for a control device """
 
     def __init__(self, pkt):
-        super(LightingDevice, self).__init__(pkt)
+        super(SwitchDevice, self).__init__(pkt)
         if isinstance(pkt, lowlevel.Lighting1):
             self.housecode = pkt.housecode
             self.unitcode = pkt.unitcode
@@ -153,6 +152,14 @@ class LightingDevice(RFXtrxDevice):
         """ Send an 'Off' command using the given transport """
         self.send_onoff(transport, False)
 
+
+
+class LightDevice(SwitchDevice):
+    """ Concrete class for a light device """
+
+    def __init__(self, pkt):
+        super(LightDevice, self).__init__(pkt)
+        
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
             transport
@@ -191,6 +198,7 @@ class LightingDevice(RFXtrxDevice):
             raise ValueError("Unsupported packettype")
 
 
+
 ###############################################################################
 # get_devide method
 ###############################################################################
@@ -200,23 +208,23 @@ def get_device(packettype, subtype, id_string):
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x11:  # Lighting2
         pkt = lowlevel.Lighting2()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x12:  # Lighting3
         pkt = lowlevel.Lighting3()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x14:  # Lighting5
         pkt = lowlevel.Lighting5()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x15:  # Lighting6
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     else:
         raise ValueError("Unsupported packettype")
 
@@ -291,26 +299,34 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+        self.values = {}
+        self.values['Command'] = pkt.value('cmnd_string')
+
+        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
+            dimmable = True
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
+        elif isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            dimmable = True
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
+        else:
+            dimmable = False
+
+        self.values['Rssi numeric'] = pkt.rssi
+
+
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
                 or isinstance(pkt, lowlevel.Lighting5) \
                 or isinstance(pkt, lowlevel.Lighting6):
-            device = LightingDevice(pkt)
+            if dimmable:
+                device = LightDevice(pkt)
+            else:
+                device = SwitchDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
 
-        self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
-            self.values['Command'] = pkt.cmnd_string
-        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
-        if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
-        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
