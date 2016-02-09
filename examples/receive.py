@@ -21,11 +21,19 @@
 import sys
 sys.path.append("../")
 
-import RFXtrx 
+import RFXtrx
 import time
 
+def print_callback(event):
+    print(event)
+
 def main():
-    core = RFXtrx.Core('/dev/serial/by-id/usb-RFXCOM_RFXtrx433_A1Y0NJGR-if00-port0', debug=True)
+    if len(sys.argv) > 1:
+        rfxcom_device = sys.argv[1]
+    else:
+        rfxcom_device = '/dev/serial/by-id/usb-RFXCOM_RFXtrx433_A1Y0NJGR-if00-port0'
+
+    core = RFXtrx.Core(rfxcom_device, print_callback, debug=True)
 
 
     while True:
