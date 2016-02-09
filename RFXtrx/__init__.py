@@ -283,6 +283,8 @@ class SensorEvent(RFXtrxEvent):
             self.values['Energy usage'] = pkt.currentwatt
             self.values['Total usage'] = pkt.totalwatts
             self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Chime):
+            self.values['Sound'] = pkt.sound
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
