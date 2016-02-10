@@ -1756,6 +1756,7 @@ class Security1(SensorPacket):
         self.id1 = None
         self.id2 = None
         self.id3 = None
+        self.id_combined = None
         self.security1_status = None
         self.battery = None
         self.rssi = None
@@ -1770,6 +1771,7 @@ class Security1(SensorPacket):
         self.id1 = data[4]
         self.id2 = data[5]
         self.id3 = data[6]
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
         self.security1_status = data[7]
         self.rssi_byte = data[8]
         self.battery = self.rssi_byte & 0x0f
@@ -1778,7 +1780,7 @@ class Security1(SensorPacket):
 
     def _set_strings(self):
         """Translate loaded numeric values into convenience strings"""
-        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2, self.id3)
+        self.id_string = "{0:06x}:{1}".format(self.id_combined, self.packettype)
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
