@@ -60,10 +60,6 @@ def parse(data):
     if data[1] == 0x16:
         pkt = Chime()
         pkt.load_receive(data)
-    if data[1] == 0x20:
-        pkt = Security1()
-        pkt.load_receive(data)
-        return pkt
         return pkt
     if data[1] == 0x50:
         pkt = Temp()
@@ -1683,106 +1679,6 @@ class Chime(SensorPacket):
         self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
-        else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
-
-###############################################################################
-# Security1 class
-###############################################################################
-
-class Security1(SensorPacket):
-    """
-    Data class for the Security1 packet type
-    """
-
-    TYPES = {0x00: 'X10 Security',
-             0x01: 'X10 Security Motion Detector',
-             0x02: 'X10 Security Remote',
-             0x03: 'KD101 Smoke Detector',
-             0x04: 'Visonic Powercode Door/Window Sensor Primary Contact',
-             0x05: 'Visonic Powercode Motion Detector',
-             0x06: 'Visonic Codesecure',
-             0x07: 'Visonic Powercode Door/Window Sensor Auxilary Contact',
-             0x08: 'Meiantech',
-             0x09: 'Alecto SA30 Smoke Detector',
-             }
-    """
-    Mapping of numeric subtype values to strings, used in type_string
-    """
-    STATUS = {0x00: 'Normal',
-              0x01: 'Normal Delayed',
-              0x02: 'Alarm',
-              0x03: 'Alarm Delayed',
-              0x04: 'Motion',
-              0x05: 'No Motion',
-              0x06: 'Panic',
-              0x07: 'End Panic',
-              0x08: 'IR',
-              0x09: 'Arm Away',
-              0x0A: 'Arm Away Delayed',
-              0x0B: 'Arm Home',
-              0x0C: 'Arm Home Delayed',
-              0x0D: 'Disarm',
-              0x10: 'Light 1 Off',
-              0x11: 'Light 1 On',
-              0x12: 'Light 2 Off',
-              0x13: 'Light 2 On',
-              0x14: 'Dark Detected',
-              0x15: 'Light Detected',
-              0x16: 'Battery low',
-              0x17: 'Pairing KD101',
-              0x80: 'Normal Tamper',
-              0x81: 'Normal Delayed Tamper',
-              0x82: 'Alarm Tamper',
-              0x83: 'Alarm Delayed Tamper',
-              0x84: 'Motion Tamper',
-              0x85: 'No Motion Tamper',
-             }
-    """
-    Mapping of numeric status values to strings, used in type_string
-    """
-
-    def __str__(self):
-        return ("Security1 [subtype={0}, seqnbr={1}, id={2}, status={3}, " +
-                "battery={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.security1_status_string, self.battery, self.rssi)
-
-    def __init__(self):
-        """Constructor"""
-        super(Security1, self).__init__()
-        self.id1 = None
-        self.id2 = None
-        self.id3 = None
-        self.security1_status = None
-        self.battery = None
-        self.rssi = None
-
-    def load_receive(self, data):
-        """Load data from a bytearray"""
-        self.data = data
-        self.packetlength = data[0]
-        self.packettype = data[1]
-        self.subtype = data[2]
-        self.seqnbr = data[3]
-        self.id1 = data[4]
-        self.id2 = data[5]
-        self.id3 = data[6]
-        self.security1_status = data[7]
-        self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
-        self.rssi = self.rssi_byte >> 4
-        self._set_strings()
-
-    def _set_strings(self):
-        """Translate loaded numeric values into convenience strings"""
-        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2, self.id3)
-        if self.subtype in self.TYPES:
-            self.type_string = self.TYPES[self.subtype]
-        if self.security1_status in self.STATUS:
-            self.security1_status_string = self.STATUS[self.security1_status]
         else:
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,

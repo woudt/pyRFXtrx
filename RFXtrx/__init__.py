@@ -285,8 +285,6 @@ class SensorEvent(RFXtrxEvent):
             self.values['Count'] = pkt.count
         if isinstance(pkt, lowlevel.Chime):
             self.values['Sound'] = pkt.sound
-        if isinstance(pkt, lowlevel.Security1):
-            self.values['Sensor Status'] = pkt.security1_status
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
