@@ -26,7 +26,7 @@ setup(
     name = 'RFXtrx',
     packages = ['RFXtrx'],
     install_requires=['pyserial>=2.7'],
-    version = '0.3',
+    version = '0.4',
     description = 'a library to communicate with the RFXtrx family of devices',
     author='Edwin Woudt',
     author_email='edwin@woudt.nl',
