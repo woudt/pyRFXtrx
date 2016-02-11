@@ -73,6 +73,7 @@ class RFXtrxDevice(object):
         self.subtype = pkt.subtype
         self.type_string = pkt.type_string
         self.id_string = pkt.id_string
+        self.known_to_be_dimmable = False
 
     def __eq__(self, other):
         if self.packettype != other.packettype:
@@ -90,11 +91,11 @@ class RFXtrxDevice(object):
 # SwitchDevice class
 ###############################################################################
 
-class SwitchDevice(RFXtrxDevice):
+class LightingDevice(RFXtrxDevice):
     """ Concrete class for a control device """
 
     def __init__(self, pkt):
-        super(SwitchDevice, self).__init__(pkt)
+        super(LightingDevice, self).__init__(pkt)
         if isinstance(pkt, lowlevel.Lighting1):
             self.housecode = pkt.housecode
             self.unitcode = pkt.unitcode
@@ -152,14 +153,6 @@ class SwitchDevice(RFXtrxDevice):
         """ Send an 'Off' command using the given transport """
         self.send_onoff(transport, False)
 
-
-
-class LightDevice(SwitchDevice):
-    """ Concrete class for a light device """
-
-    def __init__(self, pkt):
-        super(LightDevice, self).__init__(pkt)
-        
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
             transport
@@ -208,23 +201,23 @@ def get_device(packettype, subtype, id_string):
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
-        return SwitchDevice(pkt)
+        return LightingDevice(pkt)
     elif packettype == 0x11:  # Lighting2
         pkt = lowlevel.Lighting2()
         pkt.parse_id(subtype, id_string)
-        return SwitchDevice(pkt)
+        return LightingDevice(pkt)
     elif packettype == 0x12:  # Lighting3
         pkt = lowlevel.Lighting3()
         pkt.parse_id(subtype, id_string)
-        return SwitchDevice(pkt)
+        return LightingDevice(pkt)
     elif packettype == 0x14:  # Lighting5
         pkt = lowlevel.Lighting5()
         pkt.parse_id(subtype, id_string)
-        return SwitchDevice(pkt)
+        return LightingDevice(pkt)
     elif packettype == 0x15:  # Lighting6
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
-        return SwitchDevice(pkt)
+        return LightingDevice(pkt)
     else:
         raise ValueError("Unsupported packettype")
 
@@ -303,6 +296,16 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+        if isinstance(pkt, lowlevel.Lighting1) \
+                or isinstance(pkt, lowlevel.Lighting2) \
+                or isinstance(pkt, lowlevel.Lighting3) \
+                or isinstance(pkt, lowlevel.Lighting5) \
+                or isinstance(pkt, lowlevel.Lighting6):
+            device = LightingDevice(pkt)
+        else:
+            device = RFXtrxDevice(pkt)
+        super(ControlEvent, self).__init__(device)
+
         self.values = {}
         self.values['Command'] = pkt.value('cmnd_string')
 
@@ -314,22 +317,9 @@ class ControlEvent(RFXtrxEvent):
             self.values['Dim level'] = (pkt.level + 1) * 100 // 32
         else:
             dimmable = False
+        self.device.known_to_be_dimmable = dimmable
 
         self.values['Rssi numeric'] = pkt.rssi
-
-
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3) \
-                or isinstance(pkt, lowlevel.Lighting5) \
-                or isinstance(pkt, lowlevel.Lighting6):
-            if dimmable:
-                device = LightDevice(pkt)
-            else:
-                device = SwitchDevice(pkt)
-        else:
-            device = RFXtrxDevice(pkt)
-        super(ControlEvent, self).__init__(device)
 
 
     def __str__(self):
