@@ -1,6 +1,6 @@
-========
-pyRFXtrx
-========
+==========
+ pyRFXtrx
+==========
 
 A Python library to communicate with the RFXtrx family of devices
 from http://www.rfxcom.com/. Works with http://www.home-assistant.io
@@ -11,7 +11,8 @@ Using
 
 Instally via pip
 
-    $ sudo pip install -U pyRFXtrx
+::
+   $ sudo pip install -U pyRFXtrx
 
 After that, see the examples in the examples directory
 
