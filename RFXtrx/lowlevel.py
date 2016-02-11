@@ -57,6 +57,10 @@ def parse(data):
         pkt = Lighting6()
         pkt.load_receive(data)
         return pkt
+    if data[1] == 0x16:
+        pkt = Chime()
+        pkt.load_receive(data)
+        return pkt
     if data[1] == 0x50:
         pkt = Temp()
         pkt.load_receive(data)
@@ -70,11 +74,15 @@ def parse(data):
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x55:
-        pkt = RainGauge()
+        pkt = Rain()
         pkt.load_receive(data)
         return pkt
     if data[1] == 0x56:
         pkt = Wind()
+        pkt.load_receive(data)
+        return pkt
+    if data[1] == 0x5A:
+        pkt = Energy()
         pkt.load_receive(data)
         return pkt
 
@@ -100,6 +108,40 @@ class Packet(object):
         self.rssi_byte = None
         self.type_string = None
         self.id_string = None
+
+
+    def has_value(self, datatype):
+        """Return True if the sensor supports the given data type.
+        sensor.has_value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.has_temperature().
+        """
+        return hasattr(self, datatype)
+
+    def value(self, datatype):
+        """Return the :class:`SensorValue` for the given data type.
+        sensor.value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.temperature().
+        """
+        return getattr(self, datatype, None)
+
+    def __getattr__(self, name):
+        typename = name.replace("has_", "", 1)
+        if not name == typename:
+            return lambda: self.has_value(typename)
+        raise AttributeError(name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Packet):
+            return False
+        return self.id_string == other.id_string
+
+    def __str__(self):
+        (self.id_string + ": " + str(self.temperature))
+
+    def __repr__(self):
+        return self.__str__()
+
+
 
 
 ###############################################################################
@@ -350,6 +392,9 @@ class Lighting2(Packet):
                 "level={4}, rssi={5}]") \
             .format(self.type_string, self.seqnbr, self.id_string,
                     self.cmnd_string, self.level, self.rssi)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __init__(self):
         """Constructor"""
@@ -1511,3 +1556,131 @@ class Wind(SensorPacket):
             #Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+
+###############################################################################
+# Energy class
+###############################################################################
+
+class Energy(SensorPacket):
+    """
+    Data class for the Energy packet type
+    """
+
+    TYPES = {0x01: 'CM119/160',
+             0x02: 'CM180',
+             }
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Energy [subtype={0}, seqnbr={1}, id={2}, count={3}, " +
+                "current_watts={4}, total_watts={5}" +
+                "battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.count, self.currentwatt, self.totaltwatts,
+                    self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.count = None
+        self.currentwatt = None
+        self.totalwatts = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.count = data[6]
+        self.currentwatt = ((data[7] * pow(2, 24)) + (data[8] << 16) +
+                             (data[9] << 8) + data[10])
+        self.totalwatts = ((data[11] * pow(2, 40)) + (data[12] * pow(2, 32)) +
+                            (data[13] * pow(2, 24)) + (data[14] << 16) +
+                            (data[15] << 8) + data[16]) // 223.666
+        if self.subtype == 0x03:
+            self.battery = data[17] + 1 * 10   
+        else:
+            self.rssi_byte = data[17]
+            self.battery = self.rssi_byte & 0x0f
+            self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+            
+###############################################################################
+# Chime class
+###############################################################################
+
+class Chime(SensorPacket):
+    """
+    Data class for the Chime packet type
+    """
+
+    TYPES = {0x00: 'Byron SX',
+             0x01: 'Byron MP001',
+             0x02: 'Select Plus',
+             0x03: 'Select Plus 3',
+             0x04: 'Envivo',
+             } 
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Chime [subtype={0}, seqnbr={1}, id={2}, sound={3}, " +
+                "battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.sound, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Chime, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.sound = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.sound = data[6]
+        self.rssi_byte = data[7]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+

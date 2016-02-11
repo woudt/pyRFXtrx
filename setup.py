@@ -4,7 +4,7 @@ the RFXtrx family of devices from http://www.rfxcom.com/
 See https://github.com/woudt/pyRFXtrx for the latest version.
 
 Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
-    
+
 pyRFXtrx is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
 by the Free Software Foundation, either version 3 of the License, or
@@ -25,11 +25,12 @@ from setuptools import setup
 setup(
     name = 'pyRFXtrx',
     packages = ['RFXtrx'],
-    version = '0.1',
+    install_requires=['pyserial>=2.7'],
+    version = '0.4',
     description = 'a library to communicate with the RFXtrx family of devices',
     author='Edwin Woudt',
     author_email='edwin@woudt.nl',
-    url='https://github.com/woudt/pyRFXtrx',
+    url='https://github.com/Danielhiversen/pyRFXtrx',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Other Environment',

@@ -22,27 +22,43 @@ This module provides the base implementation for pyRFXtrx
 """
 # pylint: disable=R0903
 
-from RFXtrx import lowlevel
 
+from serial import Serial
+from time import sleep
+from . import lowlevel
 
-###############################################################################
-# RFXtrxTransport class
-###############################################################################
+from threading import Thread
 
-class RFXtrxTransport(object):
-    """ Abstract superclass for all transport mechanisms """
+class Core(object):
+    """The main class for rfxcom-py.
+    Has methods for sensors. 
+    """
 
-    @staticmethod
-    def parse(data):
-        """ Parse the given data and return an RFXtrxEvent """
-        pkt = lowlevel.parse(data)
-        if pkt is not None:
-            if isinstance(pkt, lowlevel.SensorPacket):
-                return SensorEvent(pkt)
-            elif isinstance(pkt, lowlevel.Status):
-                return StatusEvent(pkt)
-            else:
-                return ControlEvent(pkt)
+    def __init__(self, device, event_callback=None, debug=False):
+        """Create a new RfxtrxCore instance. """
+    
+        self._sensors = {}
+        self._event_callback = event_callback;
+  
+        self.thread = Thread(target = self._connect, args = (device, debug) )
+        self.thread.start()
+        
+
+    def _connect(self, device, debug):
+        self.transport = PySerialTransport(device, debug)
+        self.transport.reset()
+        while True:
+            event = self.transport.receive_blocking()
+            if isinstance(event, RFXtrxEvent):
+                if self._event_callback:
+                    self._event_callback(event)
+                self._sensors[event.device.id_string] = event.device
+ 
+    def sensors(self):
+        """Return all found sensors.
+        :return: dict of :class:`Sensor` instances.
+        """
+        return self._sensors
 
 
 ###############################################################################
@@ -71,14 +87,14 @@ class RFXtrxDevice(object):
 
 
 ###############################################################################
-# LightingDevice class
+# SwitchDevice class
 ###############################################################################
 
-class LightingDevice(RFXtrxDevice):
-    """ Concrete class for a lighting device """
+class SwitchDevice(RFXtrxDevice):
+    """ Concrete class for a control device """
 
     def __init__(self, pkt):
-        super(LightingDevice, self).__init__(pkt)
+        super(SwitchDevice, self).__init__(pkt)
         if isinstance(pkt, lowlevel.Lighting1):
             self.housecode = pkt.housecode
             self.unitcode = pkt.unitcode
@@ -136,6 +152,14 @@ class LightingDevice(RFXtrxDevice):
         """ Send an 'Off' command using the given transport """
         self.send_onoff(transport, False)
 
+
+
+class LightDevice(SwitchDevice):
+    """ Concrete class for a light device """
+
+    def __init__(self, pkt):
+        super(LightDevice, self).__init__(pkt)
+        
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
             transport
@@ -174,6 +198,7 @@ class LightingDevice(RFXtrxDevice):
             raise ValueError("Unsupported packettype")
 
 
+
 ###############################################################################
 # get_devide method
 ###############################################################################
@@ -183,23 +208,23 @@ def get_device(packettype, subtype, id_string):
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x11:  # Lighting2
         pkt = lowlevel.Lighting2()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x12:  # Lighting3
         pkt = lowlevel.Lighting3()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x14:  # Lighting5
         pkt = lowlevel.Lighting5()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     elif packettype == 0x15:  # Lighting6
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
-        return LightingDevice(pkt)
+        return SwitchDevice(pkt)
     else:
         raise ValueError("Unsupported packettype")
 
@@ -213,6 +238,7 @@ class RFXtrxEvent(object):
 
     def __init__(self, device):
         self.device = device
+        #self.data = None  # Previous signal
 
 
 ###############################################################################
@@ -253,6 +279,14 @@ class SensorEvent(RFXtrxEvent):
             self.values['Chill'] = pkt.chill
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
+        if isinstance(pkt, lowlevel.Energy):
+            self.values['Energy usage'] = pkt.currentwatt
+            self.values['Total usage'] = pkt.totalwatts
+            self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Chime):
+            self.values['Sound'] = pkt.sound
+        self.values['Battery numeric'] = pkt.battery
+        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
@@ -267,26 +301,34 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+        self.values = {}
+        self.values['Command'] = pkt.value('cmnd_string')
+
+        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
+            dimmable = True
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
+        elif isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            dimmable = True
+            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
+        else:
+            dimmable = False
+
+        self.values['Rssi numeric'] = pkt.rssi
+
+
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
                 or isinstance(pkt, lowlevel.Lighting5) \
                 or isinstance(pkt, lowlevel.Lighting6):
-            device = LightingDevice(pkt)
+            if dimmable:
+                device = LightDevice(pkt)
+            else:
+                device = SwitchDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
 
-        self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
-            self.values['Command'] = pkt.cmnd_string
-        if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
-        if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
-        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
@@ -305,3 +347,68 @@ class StatusEvent(RFXtrxEvent):
     def __str__(self):
         return "{0} device=[{1}]".format(
             type(self), self.device)
+
+
+
+###############################################################################
+# PySerialTransport class
+###############################################################################
+
+class PySerialTransport():
+    """ Implementation of a transport using PySerial """
+
+    def __init__(self, port, debug=False):
+        self.serial = Serial(port, 38400, timeout=0.1)
+        self.debug = debug
+
+    def receive_blocking(self):
+        """ Wait until a packet is received and return with an RFXtrxEvent """
+        while True:
+            data = self.serial.read()
+            if (len(data) > 0):
+                if data == '\x00':
+                    continue
+                pkt = bytearray(data)
+                data = self.serial.read(pkt[0])
+                pkt.extend(bytearray(data))
+                if self.debug:
+                    print("Recv: " + " ".join("0x{0:02x}".format(x)
+                                              for x in pkt))
+                return self.parse(pkt)
+
+    @staticmethod
+    def parse(data):
+        """ Parse the given data and return an RFXtrxEvent """
+        pkt = lowlevel.parse(data)
+        if pkt is not None:
+            if isinstance(pkt, lowlevel.SensorPacket):
+                obj = SensorEvent(pkt)
+            elif isinstance(pkt, lowlevel.Status):
+                obj = StatusEvent(pkt)
+            else:
+                obj = ControlEvent(pkt)
+
+            # Store the latest RF signal data
+            obj.data = data
+            return obj
+
+
+    def send(self, data):
+        """ Send the given packet """
+        if isinstance(data, bytearray):
+            pkt = data
+        elif isinstance(data, str) or isinstance(data, bytes):
+            pkt = bytearray(data)
+        else:
+            raise ValueError("Invalid type")
+        if self.debug:
+            print ("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+        self.serial.write(pkt)
+
+    def reset(self):
+        """ Reset the RFXtrx """
+        self.send(b'\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        sleep(0.3)  # Should work with 0.05, but not for me
+        self.serial.flushInput()
+        self.send(b'\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        return self.receive_blocking()

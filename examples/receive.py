@@ -18,10 +18,30 @@
 # along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 # If not, see <http://www.gnu.org/licenses/>.
 
-from RFXtrx.pyserial import PySerialTransport
+import sys
+sys.path.append("../")
 
-transport = PySerialTransport('/dev/cu.usbserial-05VN8GHS', debug=True)
-transport.reset()
+import RFXtrx
+import time
 
-while True:
-    print(transport.receive_blocking())
+def print_callback(event):
+    print(event)
+
+def main():
+    if len(sys.argv) > 1:
+        rfxcom_device = sys.argv[1]
+    else:
+        rfxcom_device = '/dev/serial/by-id/usb-RFXCOM_RFXtrx433_A1Y0NJGR-if00-port0'
+
+    core = RFXtrx.Core(rfxcom_device, print_callback, debug=True)
+
+
+    while True:
+        print(core.sensors())
+        time.sleep(2)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
