@@ -1,7 +1,7 @@
 '''
 This file is part of pyRFXtrx, a Python library to communicate with
 the RFXtrx family of devices from http://www.rfxcom.com/
-See https://github.com/woudt/pyRFXtrx for the latest version.
+See https://github.com/Danielhiversen/pyRFXtrx for the latest version.
 
 Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
 
