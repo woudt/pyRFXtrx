@@ -21,13 +21,12 @@
 This module provides the base implementation for pyRFXtrx
 """
 # pylint: disable=R0903
-
-
-from serial import Serial
-from time import sleep
-from . import lowlevel
+from __future__ import print_function
 
 from threading import Thread
+from time import sleep
+from serial import Serial
+from . import lowlevel
 
 
 class Core(object):
@@ -35,16 +34,22 @@ class Core(object):
     Has methods for sensors.
     """
 
-    def __init__(self, device, event_callback=None, debug=False):
-        """Create a new RfxtrxCore instance. """
+    def __init__(self, device, event_callback=None, debug=False, dummy=False):
 
         self._sensors = {}
         self._event_callback = event_callback
+        self.transport = None
+        self._dummy = dummy
 
         self.thread = Thread(target=self._connect, args=(device, debug))
         self.thread.start()
 
     def _connect(self, device, debug):
+        """Connect """
+        if self._dummy:
+            self.transport = DummyTransport(debug)
+            return
+
         self.transport = PySerialTransport(device, debug)
         self.transport.reset()
         while True:
@@ -114,33 +119,33 @@ class LightingDevice(RFXtrxDevice):
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
 
-    def send_onoff(self, transport, on):
+    def send_onoff(self, transport, turn_on):
         """ Send an 'On' or 'Off' command using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             on and 0x01 or 0x00)
+                             turn_on and 0x01 or 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             on and 0x01 or 0x00, 0x00)
+                             turn_on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             on and 0x10 or 0x1a)
+                             turn_on and 0x10 or 0x1a)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             on and 0x01 or 0x00, 0x00)
+                             turn_on and 0x01 or 0x00, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
                              self.unitcode,
-                             not on and 0x01 or 0x00, self.cmndseqnbr)
+                             not turn_on and 0x01 or 0x00, self.cmndseqnbr)
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
@@ -192,10 +197,10 @@ class LightingDevice(RFXtrxDevice):
             raise ValueError("Unsupported packettype")
 
 
-
 ###############################################################################
 # get_devide method
 ###############################################################################
+
 
 def get_device(packettype, subtype, id_string):
     """ Return a device base on its identifying values """
@@ -321,7 +326,6 @@ class ControlEvent(RFXtrxEvent):
 
         self.values['Rssi numeric'] = pkt.rssi
 
-
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
             type(self), self.device, sorted(self.values.items()))
@@ -343,32 +347,12 @@ class StatusEvent(RFXtrxEvent):
 
 
 ###############################################################################
-# PySerialTransport class
+# RFXtrxTransport class
 ###############################################################################
 
-
-class PySerialTransport():
-    """ Implementation of a transport using PySerial """
-
-    def __init__(self, port, debug=False):
-        self.serial = Serial(port, 38400, timeout=0.1)
-        self.debug = debug
-
-    def receive_blocking(self):
-        """ Wait until a packet is received and return with an RFXtrxEvent """
-        while True:
-            data = self.serial.read()
-            if (len(data) > 0):
-                if data == '\x00':
-                    continue
-                pkt = bytearray(data)
-                data = self.serial.read(pkt[0])
-                pkt.extend(bytearray(data))
-                if self.debug:
-                    print("Recv: " + " ".join("0x{0:02x}".format(x)
-                                              for x in pkt))
-                return self.parse(pkt)
-
+class RFXtrxTransport(object):
+    """ Abstract superclass for all transport mechanisms """
+    # pylint: disable=attribute-defined-outside-init
     @staticmethod
     def parse(data):
         """ Parse the given data and return an RFXtrxEvent """
@@ -385,6 +369,33 @@ class PySerialTransport():
             obj.data = data
             return obj
 
+###############################################################################
+# PySerialTransport class
+###############################################################################
+
+
+class PySerialTransport(RFXtrxTransport):
+    """ Implementation of a transport using PySerial """
+
+    def __init__(self, port, debug=False):
+        self.serial = Serial(port, 38400, timeout=0.1)
+        self.debug = debug
+
+    def receive_blocking(self):
+        """ Wait until a packet is received and return with an RFXtrxEvent """
+        while True:
+            data = self.serial.read()
+            if len(data) > 0:
+                if data == '\x00':
+                    continue
+                pkt = bytearray(data)
+                data = self.serial.read(pkt[0])
+                pkt.extend(bytearray(data))
+                if self.debug:
+                    print("Recv: " + " ".join("0x{0:02x}".format(x)
+                                              for x in pkt))
+                return self.parse(pkt)
+
     def send(self, data):
         """ Send the given packet """
         if isinstance(data, bytearray):
@@ -394,7 +405,7 @@ class PySerialTransport():
         else:
             raise ValueError("Invalid type")
         if self.debug:
-            print ("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+            print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
         self.serial.write(pkt)
 
     def reset(self):
@@ -404,3 +415,24 @@ class PySerialTransport():
         self.serial.flushInput()
         self.send(b'\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         return self.receive_blocking()
+
+
+class DummyTransport(RFXtrxTransport):
+    """ Dummy transport for testing purposes """
+
+    def __init__(self, debug=True):
+        self.debug = debug
+
+    def receive(self, data):
+        """ Emulate a receive by parsing the given data """
+        pkt = bytearray(data)
+        if self.debug:
+            print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+        return self.parse(pkt)
+
+    def send(self, data):
+        """ Emulate a send by doing nothing (except printing debug info if
+            requested) """
+        pkt = bytearray(data)
+        if self.debug:
+            print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
