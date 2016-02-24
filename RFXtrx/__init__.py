@@ -73,6 +73,7 @@ class RFXtrxDevice(object):
         self.subtype = pkt.subtype
         self.type_string = pkt.type_string
         self.id_string = pkt.id_string
+        self.known_to_be_dimmable = False
 
     def __eq__(self, other):
         if self.packettype != other.packettype:
@@ -87,11 +88,11 @@ class RFXtrxDevice(object):
 
 
 ###############################################################################
-# LightingDevice class
+# SwitchDevice class
 ###############################################################################
 
 class LightingDevice(RFXtrxDevice):
-    """ Concrete class for a lighting device """
+    """ Concrete class for a control device """
 
     def __init__(self, pkt):
         super(LightingDevice, self).__init__(pkt)
@@ -191,6 +192,7 @@ class LightingDevice(RFXtrxDevice):
             raise ValueError("Unsupported packettype")
 
 
+
 ###############################################################################
 # get_devide method
 ###############################################################################
@@ -270,6 +272,16 @@ class SensorEvent(RFXtrxEvent):
             self.values['Chill'] = pkt.chill
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
+        if isinstance(pkt, lowlevel.Energy):
+            self.values['Energy usage'] = pkt.currentwatt
+            self.values['Total usage'] = pkt.totalwatts
+            self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Chime):
+            self.values['Sound'] = pkt.sound
+        if isinstance(pkt, lowlevel.Security1):
+            self.values['Sensor Status'] = pkt.security1_status_string
+        self.values['Battery numeric'] = pkt.battery
+        self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
@@ -295,15 +307,20 @@ class ControlEvent(RFXtrxEvent):
         super(ControlEvent, self).__init__(device)
 
         self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
-            self.values['Command'] = pkt.cmnd_string
+        self.values['Command'] = pkt.value('cmnd_string')
+
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
+            dimmable = True
             self.values['Dim level'] = (pkt.level + 1) * 100 // 16
-        if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+        elif isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
+            dimmable = True
             self.values['Dim level'] = (pkt.level + 1) * 100 // 32
+        else:
+            dimmable = False
+        self.device.known_to_be_dimmable = dimmable
+
         self.values['Rssi numeric'] = pkt.rssi
+
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
