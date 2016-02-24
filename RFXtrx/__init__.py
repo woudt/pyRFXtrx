@@ -27,23 +27,22 @@ from serial import Serial
 from time import sleep
 from . import lowlevel
 
-import time
 from threading import Thread
+
 
 class Core(object):
     """The main class for rfxcom-py.
-    Has methods for sensors. 
+    Has methods for sensors.
     """
 
     def __init__(self, device, event_callback=None, debug=False):
         """Create a new RfxtrxCore instance. """
-    
+
         self._sensors = {}
-        self._event_callback = event_callback;
-  
-        self.thread = Thread(target = self._connect, args = (device, debug) )
+        self._event_callback = event_callback
+
+        self.thread = Thread(target=self._connect, args=(device, debug))
         self.thread.start()
-        
 
     def _connect(self, device, debug):
         self.transport = PySerialTransport(device, debug)
@@ -54,7 +53,7 @@ class Core(object):
                 if self._event_callback:
                     self._event_callback(event)
                 self._sensors[event.device.id_string] = event.device
- 
+
     def sensors(self):
         """Return all found sensors.
         :return: dict of :class:`Sensor` instances.
@@ -139,7 +138,8 @@ class LightingDevice(RFXtrxDevice):
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, not on and 0x01 or 0x00, self.cmndseqnbr)
+                             self.unitcode,
+                             not on and 0x01 or 0x00, self.cmndseqnbr)
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
@@ -230,7 +230,6 @@ class RFXtrxEvent(object):
 
     def __init__(self, device):
         self.device = device
-        #self.data = None  # Previous signal
 
 
 ###############################################################################
@@ -314,6 +313,7 @@ class ControlEvent(RFXtrxEvent):
 # Status class
 ###############################################################################
 
+
 class StatusEvent(RFXtrxEvent):
     """ Concrete class for status """
 
@@ -325,10 +325,10 @@ class StatusEvent(RFXtrxEvent):
             type(self), self.device)
 
 
-
 ###############################################################################
 # PySerialTransport class
 ###############################################################################
+
 
 class PySerialTransport():
     """ Implementation of a transport using PySerial """
@@ -367,7 +367,6 @@ class PySerialTransport():
             # Store the latest RF signal data
             obj.data = data
             return obj
-
 
     def send(self, data):
         """ Send the given packet """

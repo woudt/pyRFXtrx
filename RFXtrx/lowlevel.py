@@ -101,7 +101,6 @@ class Packet(object):
         self.type_string = None
         self.id_string = None
 
-
     def has_value(self, datatype):
         """Return True if the sensor supports the given data type.
         sensor.has_value(RFXCOM_TEMPERATURE) is identical to calling
@@ -134,8 +133,6 @@ class Packet(object):
         return self.__str__()
 
 
-
-
 ###############################################################################
 # Status class
 ###############################################################################
@@ -146,8 +143,9 @@ def _decode_flags(v, words):
     for w in words:
         if v % 2:
             s.add(w)
-        v//= 2
+        v //= 2
     return s
+
 
 class Status(Packet):
     """
@@ -192,11 +190,13 @@ class Status(Packet):
 
         devs = set()
         devs.update(_decode_flags(data[7] / 0x80,
-            'undecoded'))
+                                  'undecoded'))
         devs.update(_decode_flags(data[8],
-            'mertik lightwarerf hideki lacrosse fs20 proguard'))
+                                  'mertik lightwarerf hideki' +
+                                  ' lacrosse fs20 proguard'))
         devs.update(_decode_flags(data[9],
-            'x10 arc ac homeeasy ikeakoppla oregon ati visonic'))
+                                  'x10 arc ac homeeasy ikeakoppla' +
+                                  ' oregon ati visonic'))
         self.devices = sorted(devs)
 
         self._set_strings()
@@ -206,9 +206,8 @@ class Status(Packet):
         if self.tranceiver_type in self.TYPES:
             self.type_string = self.TYPES[self.tranceiver_type]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = 'Unknown'
-
 
 
 class ControlPacket(Packet):
@@ -218,7 +217,7 @@ class ControlPacket(Packet):
         """Constructor"""
         super(ControlPacket, self).__init__()
         self.turn_on = False
-        self.turn_off = False        
+        self.turn_off = False
         self.dim_level = None
 
 
@@ -344,7 +343,7 @@ class Lighting1(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -481,7 +480,7 @@ class Lighting2(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -492,9 +491,9 @@ class Lighting2(ControlPacket):
                 elif self.cmnd_string == 'Off':
                     self.dim_level = 0
                 elif self.cmnd_string == 'Set level':
-                    self.dim_level = min((self.level+1)*100//16-6,0)                        
+                    self.dim_level = min((self.level+1)*100//16-6, 0)
 
-                if self.dim_level == 0:                
+                if self.dim_level == 0:
                     self.turn_off = True
                 else:
                     self.turn_on = True
@@ -611,7 +610,7 @@ class Lighting3(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -715,7 +714,7 @@ class Lighting4(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
 
@@ -888,7 +887,7 @@ class Lighting5(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -905,12 +904,12 @@ class Lighting5(ControlPacket):
                 elif self.cmnd_string == 'Power':
                     self.dim_level = 0
                 elif self.cmnd_string == 'Dim':
-                    self.dim_level = min((self.level+1)*100//32-3,0)                    
-                elif self.cmnd_string == '100%': 
+                    self.dim_level = min((self.level+1)*100//32-3, 0)
+                elif self.cmnd_string == '100%':
                     self.dim_level = 100
-                elif self.cmnd_string == '50%': 
+                elif self.cmnd_string == '50%':
                     self.dim_level = 50
-                elif self.cmnd_string == '25%': 
+                elif self.cmnd_string == '25%':
                     self.dim_level = 25
             elif self.subtype == 0x04 and self.cmnd in self.COMMANDS_02_04:
                 self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
@@ -924,7 +923,7 @@ class Lighting5(ControlPacket):
             elif self.cmnd_string == 'Off':
                 self.dim_level = 0
 
-            if self.dim_level == 0:                
+            if self.dim_level == 0:
                 self.turn_off = True
             else:
                 self.turn_on = True
@@ -1040,7 +1039,7 @@ class Lighting6(ControlPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -1150,7 +1149,7 @@ class Temp(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
 
@@ -1210,7 +1209,7 @@ class Humid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1291,7 +1290,7 @@ class TempHumid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1357,7 +1356,7 @@ class Baro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.forecast in self.FORECAST_TYPES:
@@ -1439,7 +1438,7 @@ class TempHumidBaro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1519,15 +1518,15 @@ class Rain(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
-
 
 
 ###############################################################################
 # Wind class
 ###############################################################################
+
 
 class Wind(SensorPacket):
     """
@@ -1583,7 +1582,7 @@ class Wind(SensorPacket):
         self.chill = (-1 * (data[14] >> 7)) * (
                 (data[14] & 0x7f) * 256.0 + data[15]) / 10.0
         if self.subtype == 0x03:
-            self.battery = data[16] + 1 * 10   
+            self.battery = data[16] + 1 * 10
         else:
             self.rssi_byte = data[16]
             self.battery = self.rssi_byte & 0x0f
@@ -1596,6 +1595,6 @@ class Wind(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
