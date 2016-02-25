@@ -1,5 +1,5 @@
 ==========
- pyRFXtrx
+ pyRFXtrx  |Build Status| |Coverage Status|
 ==========
 
 A Python library to communicate with the RFXtrx family of devices
@@ -33,3 +33,9 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 If not, see <http://www.gnu.org/licenses/>.
+
+
+.. |Build Status| image:: https://travis-ci.org/Danielhiversen/pyRFXtrx.svg?branch=master
+   :target: https://travis-ci.org/Danielhiversen/pyRFXtrx
+.. |Coverage Status| image:: https://img.shields.io/coveralls/Danielhiversen/pyRFXtrx.svg
+   :target: https://coveralls.io/r/Danielhiversen/pyRFXtrx?branch=master
