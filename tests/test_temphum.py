@@ -44,3 +44,12 @@ class TempHumidityTestCase(TestCase):
         self.data[2] = 0xEE
         temphum = RFXtrx.lowlevel.parse(self.data)
         self.assertEquals(temphum.type_string,'Unknown type (0x52/0xee)')
+        
+    def test_equal(self):
+        temphum = RFXtrx.lowlevel.parse(self.data)
+        self.data = bytearray(b'\x0A\x52\x02\x11\x70\x02\x80\xA7'
+                              b'\x2D\x00\x89')
+
+        temphum2 = RFXtrx.lowlevel.parse(self.data)
+        self.assertTrue(temphum==temphum2)
+        self.assertFalse(temphum==None)

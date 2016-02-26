@@ -1,5 +1,6 @@
 import unittest
 from RFXtrx import lowlevel
+import RFXtrx
 
 class TestRFXTRlowlevel(unittest.TestCase):
     """
@@ -45,7 +46,10 @@ class TestRFXTRlowlevel(unittest.TestCase):
         self.assertEqual(x.cmnd_string,"On")
         self.assertEqual(x.rssi_byte,112)
         self.assertEqual(x.rssi,7)
- 
+        self.assertEqual(x.__str__(),'Lighting1 [subtype=X10 lighting, seqnbr=42, id=E5, cmnd=On, rssi=7]')
+
+        self.assertTrue(x.has_type_string)
+
         x = lowlevel.Lighting1()
         x.set_transmit(0x00, 0x2a, 0x45, 0x05, 0x01)
         self.assertEqual(x.seqnbr, 42)
@@ -98,8 +102,8 @@ class TestRFXTRlowlevel(unittest.TestCase):
         self.assertEqual(x.cmnd_string,"Set level")
         self.assertEqual(x.rssi_byte,112)
         self.assertEqual(x.rssi,7)
+        self.assertEqual(x.__str__(),'Lighting2 [subtype=AC, seqnbr=42, id=1234567:5, cmnd=Set level, level=8, rssi=7]')
  
-        
         x = lowlevel.Lighting2()
         x.set_transmit(0x00, 0x2a, 0x1234567, 0x05, 0x02, 0x08)
         self.assertEqual(x.seqnbr, 42)
@@ -161,7 +165,8 @@ class TestRFXTRlowlevel(unittest.TestCase):
         self.assertEqual(x.rssi_byte,121)
         self.assertEqual(x.rssi,7)
         self.assertEqual(x.battery,9)
-        
+        self.assertEqual(x.__str__(),'Lighting3 [subtype=Ikea Koppla, seqnbr=42, id=1:234, cmnd=Level 5, battery=9, rssi=7]')
+         
         x = lowlevel.Lighting3()
         x.set_transmit(0x00, 0x2a, 0x1, 0x234, 0x15)
         self.assertEqual(list(x.data), [8, 18, 0, 42, 1, 52, 2, 21, 0])
@@ -191,3 +196,24 @@ class TestRFXTRlowlevel(unittest.TestCase):
         self.assertRaises(ValueError, x.parse_id,0, "G:234")
         self.assertRaises(ValueError, x.parse_id,0, "10234")
         self.assertRaises(ValueError, x.parse_id,0, "1:23X")
+
+
+
+class test_Lighting3(unittest.TestCase):
+
+    def setUp(self):
+
+        self.data = bytearray(b'\x0A\x14\x00\xAD\xF3\x94\xAB'
+                              b'\x01\x01\x00\x60')
+        self.parser = RFXtrx.lowlevel.Lighting5()
+
+    def test_parse_bytes(self):
+
+        light = RFXtrx.lowlevel.parse(self.data)
+        self.assertEquals(RFXtrx.lowlevel.Lighting5, type(light))
+        self.assertEquals(light.type_string,"LightwaveRF, Siemens")
+        self.assertEquals(light.seqnbr,173)
+        self.assertEquals(light.id_string,"f394ab:1")
+        self.assertEquals(light.cmnd_string,"On")
+        self.assertEquals(light.cmnd,1)
+        self.assertEquals(light.level,0)

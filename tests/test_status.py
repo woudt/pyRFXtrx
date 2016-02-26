@@ -17,6 +17,7 @@ class StatusTestCase(TestCase):
         self.assertEquals(status.devices, ['ac', 'arc', 'hideki', 'homeeasy', 'lacrosse', 'oregon', 'x10'])
         self.assertEquals(status.type_string,'433.92MHz')
         self.assertEquals(status.firmware_version,69)
+        self.assertTrue(status.has_value('devices'))
 
     def test_validate_bytes_short(self):
 

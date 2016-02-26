@@ -126,6 +126,9 @@ class LightingDevice(RFXtrxDevice):
         """ Send a 'Dim' command with the given level using the given
             transport
         """
+        if level < 0 or level > 100:
+            raise ValueError("Dim level must be between 0 and 100")
+
         if self.packettype == 0x10:  # Lighting1
             raise ValueError("Dim level unsupported for Lighting1")
             # Supporting a dim level for X10 directly is not possible because
@@ -308,6 +311,49 @@ class StatusEvent(RFXtrxEvent):
         return "{0} device=[{1}]".format(
             type(self), self.device)
 
+###############################################################################
+# DummySerila class
+###############################################################################
+
+
+class _dummySerial(object):
+    """ Dummy class for testing"""
+    # pylint: disable=unused-argument
+    def __init__(self, *args, **kwargs):
+        self._read_num = 0
+        self._data = {}
+        self._data[0] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
+                         0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
+        self._data[1] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
+                         0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
+        self._data[2] = [0x0a, 0x51, 0x01, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
+        self._data[3] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
+                         0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
+        self._data[4] = [0x0a, 0x51, 0x01, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
+        self._data[5] = [0x0a, 0x20, 0x00, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor2
+
+    def write(self, *args, **kwargs):
+        """ Dummy function for writing"""
+        pass
+
+    # pylint: disable=invalid-name
+    def flushInput(self, *args, **kwargs):
+        """ Called by PySerialTransport"""
+        pass
+
+    def read(self, data=None):
+        """ Dummy function for reading"""
+        if data is not None:
+            return []
+        res = self._data[self._read_num]
+        self._read_num = self._read_num + 1
+        if self._read_num >= len(self._data):
+            self._read_num = 0
+        return res
+
 
 ###############################################################################
 # RFXtrxTransport class
@@ -422,7 +468,6 @@ class Connect(object):
 
     def __init__(self, device, event_callback=None, debug=False,
                  transport_protocol=PySerialTransport):
-        print(device)
         self._sensors = {}
         self._event_callback = event_callback
         self.transport = None
@@ -441,7 +486,8 @@ class Connect(object):
             if isinstance(event, RFXtrxEvent):
                 if self._event_callback:
                     self._event_callback(event)
-                self._sensors[event.device.id_string] = event.device
+                if isinstance(event, SensorEvent):
+                    self._sensors[event.device.id_string] = event.device
 
     def sensors(self):
         """Return all found sensors.
