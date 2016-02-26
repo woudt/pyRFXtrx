@@ -18,5 +18,5 @@ class Elec2TestCase(TestCase):
         self.assertEquals(energy.id_string,"2e:b2")
         self.assertEquals(energy.count,3)
         self.assertEquals(energy.currentwatt,692)
-    #    self.assertEquals(energy.totalwatts,920824.0)
+        self.assertEquals(energy.totalwatts,920825.1947099693)
     
