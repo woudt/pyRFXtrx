@@ -29,43 +29,6 @@ from serial import Serial
 from . import lowlevel
 
 
-class Core(object):
-    """The main class for rfxcom-py.
-    Has methods for sensors.
-    """
-
-    def __init__(self, device, event_callback=None, debug=False, dummy=False):
-
-        self._sensors = {}
-        self._event_callback = event_callback
-        self.transport = None
-        self._dummy = dummy
-
-        self.thread = Thread(target=self._connect, args=(device, debug))
-        self.thread.start()
-
-    def _connect(self, device, debug):
-        """Connect """
-        if self._dummy:
-            self.transport = DummyTransport(debug)
-            return
-
-        self.transport = PySerialTransport(device, debug)
-        self.transport.reset()
-        while True:
-            event = self.transport.receive_blocking()
-            if isinstance(event, RFXtrxEvent):
-                if self._event_callback:
-                    self._event_callback(event)
-                self._sensors[event.device.id_string] = event.device
-
-    def sensors(self):
-        """Return all found sensors.
-        :return: dict of :class:`Sensor` instances.
-        """
-        return self._sensors
-
-
 ###############################################################################
 # RFXtrxDevice class
 ###############################################################################
@@ -356,6 +319,8 @@ class RFXtrxTransport(object):
     @staticmethod
     def parse(data):
         """ Parse the given data and return an RFXtrxEvent """
+        if data is None:
+            return None
         pkt = lowlevel.parse(data)
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
@@ -368,6 +333,11 @@ class RFXtrxTransport(object):
             # Store the latest RF signal data
             obj.data = data
             return obj
+
+    def reset(self):
+        """ reset the rfxtrx device """
+        pass
+
 
 ###############################################################################
 # PySerialTransport class
@@ -420,15 +390,22 @@ class PySerialTransport(RFXtrxTransport):
 class DummyTransport(RFXtrxTransport):
     """ Dummy transport for testing purposes """
 
-    def __init__(self, debug=True):
+    def __init__(self, device="", debug=True):
         self.debug = debug
+        self.device = device
 
-    def receive(self, data):
+    def receive(self, data=None):
         """ Emulate a receive by parsing the given data """
+        if data is None:
+            return None
         pkt = bytearray(data)
         if self.debug:
             print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
         return self.parse(pkt)
+
+    def receive_blocking(self, data=None):
+        """ Emulate a receive by parsing the given data """
+        return self.receive(data)
 
     def send(self, data):
         """ Emulate a send by doing nothing (except printing debug info if
@@ -436,3 +413,42 @@ class DummyTransport(RFXtrxTransport):
         pkt = bytearray(data)
         if self.debug:
             print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+
+
+class Connect(object):
+    """The main class for rfxcom-py.
+    Has methods for sensors.
+    """
+
+    def __init__(self, device, event_callback=None, debug=False,
+                 transport_protocol=PySerialTransport):
+        print(device)
+        self._sensors = {}
+        self._event_callback = event_callback
+        self.transport = None
+        self.transport_protocol = transport_protocol
+
+        self.thread = Thread(target=self._connect, args=(device, debug))
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def _connect(self, device, debug):
+        """Connect """
+        self.transport = self.transport_protocol(device, debug)
+        self.transport.reset()
+        while True:
+            event = self.transport.receive_blocking()
+            if isinstance(event, RFXtrxEvent):
+                if self._event_callback:
+                    self._event_callback(event)
+                self._sensors[event.device.id_string] = event.device
+
+    def sensors(self):
+        """Return all found sensors.
+        :return: dict of :class:`Sensor` instances.
+        """
+        return self._sensors
+
+
+class Core(Connect):
+    "The main class for rfxcom-py. Has changed name to Connect"

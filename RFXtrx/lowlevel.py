@@ -28,7 +28,7 @@ RFXtrx.
 def parse(data):
     # pylint: disable=too-many-branches
     """ Parse a packet from a bytearray """
-    if data[0] == 0:
+    if data[0] == 0 or len(data) < 2:
         # null length packet - sometimes happens on initialization
         return None
     if data[1] == 0x01:
@@ -141,7 +141,7 @@ class Packet(object):
         return self.id_string == other.id_string
 
     def __str__(self):
-        return self.id_string + ": " + str(self.temperature)
+        return self.id_string
 
     def __repr__(self):
         return self.__str__()
@@ -1611,7 +1611,7 @@ class Energy(SensorPacket):
                 "current_watts={4}, total_watts={5}" +
                 "battery={6}, rssi={7}]") \
             .format(self.type_string, self.seqnbr, self.id_string,
-                    self.count, self.currentwatt, self.totaltwatts,
+                    self.count, self.currentwatt, self.totalwatts,
                     self.battery, self.rssi)
 
     def __init__(self):
@@ -1640,6 +1640,7 @@ class Energy(SensorPacket):
         self.totalwatts = ((data[11] * pow(2, 40)) + (data[12] * pow(2, 32)) +
                            (data[13] * pow(2, 24)) + (data[14] << 16) +
                            (data[15] << 8) + data[16]) // 223.666
+
         if self.subtype == 0x03:
             self.battery = data[17] + 1 * 10
         else:

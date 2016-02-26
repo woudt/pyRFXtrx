@@ -8,7 +8,6 @@ class TestRFXTRlowlevel(unittest.TestCase):
 
     def test_Status(self):
         x = lowlevel.Status()
-        print(x)
         self.assertIsNone(x.type_string)
         self.assertIsNone(x.firmware_version)
         self.assertIsNone(x.devices)
