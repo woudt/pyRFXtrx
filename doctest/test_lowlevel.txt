@@ -1,0 +1,1142 @@
+Doctests for the lowlevel module
+================================
+
+This file is part of pyRFXtrx, a Python library to communicate with
+the RFXtrx family of devices from http://www.rfxcom.com/
+See https://github.com/woudt/pyRFXtrx for the latest version.
+
+Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
+
+pyRFXtrx is free software: you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+pyRFXtrx is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with pyRFXtrx.  See the file COPYING.txt in the distribution.
+If not, see <http://www.gnu.org/licenses/>.
+
+Status
+------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Status()
+>>> print(x)
+Status [subtype=None, firmware=None, devices=None]
+>>> x.load_receive(bytearray([0x0d, 0x01, 0x00, 0x01, 0x02, 0x53, 0x3e, 0x00, 0x0c, 0x2f, 0x01, 0x01, 0x00, 0x00]))
+>>> print(x)
+Status [subtype=433.92MHz, firmware=62, devices=['ac', 'arc', 'hideki', 'homeeasy', 'lacrosse', 'oregon', 'x10']]
+>>> 
+>>> print(list(x.data))
+[13, 1, 0, 1, 2, 83, 62, 0, 12, 47, 1, 1, 0, 0]
+>>> print(x.packetlength)
+13
+>>> print(x.packettype)
+1
+>>> print(x.tranceiver_type)
+83
+>>> print(x.firmware_version)
+62
+>>> print(x.type_string)
+433.92MHz
+>>> print(x.devices)
+['ac', 'arc', 'hideki', 'homeeasy', 'lacrosse', 'oregon', 'x10']
+
+
+Lighting1
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting1()
+>>> print(x)
+Lighting1 [subtype=None, seqnbr=None, id=None, cmnd=None, rssi=None]
+>>> x.load_receive(bytearray([0x07, 0x10, 0x00, 0x2a, 0x45, 0x05, 0x01, 0x70]))
+>>> print(x)
+Lighting1 [subtype=X10 lighting, seqnbr=42, id=E5, cmnd=On, rssi=7]
+>>> 
+>>> print(list(x.data))
+[7, 16, 0, 42, 69, 5, 1, 112]
+>>> print(x.packetlength)
+7
+>>> print(x.packettype)
+16
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+X10 lighting
+>>> print(x.seqnbr)
+42
+>>> print(x.housecode)
+69
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+E5
+>>> print(x.cmnd)
+1
+>>> print(x.cmnd_string)
+On
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting1()
+>>> x.set_transmit(0x00, 0x2a, 0x45, 0x05, 0x01)
+>>> print(x)
+Lighting1 [subtype=X10 lighting, seqnbr=42, id=E5, cmnd=On, rssi=0]
+>>> 
+>>> print(list(x.data))
+[7, 16, 0, 42, 69, 5, 1, 0]
+>>> print(x.packetlength)
+7
+>>> print(x.packettype)
+16
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+X10 lighting
+>>> print(x.seqnbr)
+42
+>>> print(x.housecode)
+69
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+E5
+>>> print(x.cmnd)
+1
+>>> print(x.cmnd_string)
+On
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> 
+>>> x = lowlevel.Lighting1()
+>>> x.parse_id(0, "E13")
+>>> print(x)
+Lighting1 [subtype=X10 lighting, seqnbr=None, id=E13, cmnd=None, rssi=None]
+>>> print(x.housecode)
+69
+>>> print(x.unitcode)
+13
+>>> x.parse_id(0, "Q1")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "AA")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Lighting2
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting2()
+>>> print(x)
+Lighting2 [subtype=None, seqnbr=None, id=None, cmnd=None, level=None, rssi=None]
+>>> x.load_receive(bytearray([0x0b, 0x11, 0x00, 0x2a, 0x01, 0x23, 0x45, 0x67, 0x05, 0x02, 0x08, 0x70]))
+>>> print(x)
+Lighting2 [subtype=AC, seqnbr=42, id=1234567:5, cmnd=Set level, level=8, rssi=7]
+>>> 
+>>> print(list(x.data))
+[11, 17, 0, 42, 1, 35, 69, 103, 5, 2, 8, 112]
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+17
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+AC
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+1
+>>> print(x.id2)
+35
+>>> print(x.id3)
+69
+>>> print(x.id4)
+103
+>>> print(x.id_combined)
+19088743
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234567:5
+>>> print(x.cmnd)
+2
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+8
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting2()
+>>> x.set_transmit(0x00, 0x2a, 0x1234567, 0x05, 0x02, 0x08)
+>>> print(x)
+Lighting2 [subtype=AC, seqnbr=42, id=1234567:5, cmnd=Set level, level=8, rssi=0]
+>>> 
+>>> print(list(x.data))
+[11, 17, 0, 42, 1, 35, 69, 103, 5, 2, 8, 0]
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+17
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+AC
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+1
+>>> print(x.id2)
+35
+>>> print(x.id3)
+69
+>>> print(x.id4)
+103
+>>> print(x.id_combined)
+19088743
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234567:5
+>>> print(x.cmnd)
+2
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+8
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> 
+>>> x = lowlevel.Lighting2()
+>>> x.parse_id(0, "1234567:5")
+>>> print(x)
+Lighting2 [subtype=AC, seqnbr=None, id=1234567:5, cmnd=None, level=None, rssi=None]
+>>> print(x.id1)
+1
+>>> print(x.id2)
+35
+>>> print(x.id3)
+69
+>>> print(x.id4)
+103
+>>> print(x.id_combined)
+19088743
+>>> print(x.unitcode)
+5
+>>> x.parse_id(0, "12345678:5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123456:54")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123456785")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Lighting3
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting3()
+>>> print(x)
+Lighting3 [subtype=None, seqnbr=None, id=None, cmnd=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x08, 0x12, 0x00, 0x2a, 0x01, 0x34, 0x02, 0x15, 0x79]))
+>>> print(x)
+Lighting3 [subtype=Ikea Koppla, seqnbr=42, id=1:234, cmnd=Level 5, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[8, 18, 0, 42, 1, 52, 2, 21, 121]
+>>> print(x.packetlength)
+8
+>>> print(x.packettype)
+18
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Ikea Koppla
+>>> print(x.seqnbr)
+42
+>>> print(x.system)
+1
+>>> print(x.channel1)
+52
+>>> print(x.channel2)
+2
+>>> print(x.channel)
+564
+>>> print(x.id_string)
+1:234
+>>> print(x.cmnd)
+21
+>>> print(x.cmnd_string)
+Level 5
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+>>> 
+>>> x = lowlevel.Lighting3()
+>>> x.set_transmit(0x00, 0x2a, 0x1, 0x234, 0x15)
+>>> print(x)
+Lighting3 [subtype=Ikea Koppla, seqnbr=42, id=1:234, cmnd=Level 5, battery=0, rssi=0]
+>>> 
+>>> print(list(x.data))
+[8, 18, 0, 42, 1, 52, 2, 21, 0]
+>>> print(x.packetlength)
+8
+>>> print(x.packettype)
+18
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Ikea Koppla
+>>> print(x.seqnbr)
+42
+>>> print(x.system)
+1
+>>> print(x.channel1)
+52
+>>> print(x.channel2)
+2
+>>> print(x.channel)
+564
+>>> print(x.id_string)
+1:234
+>>> print(x.cmnd)
+21
+>>> print(x.cmnd_string)
+Level 5
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> print(x.battery)
+0
+>>> x = lowlevel.Lighting3()
+>>> x.parse_id(0, "1:234")
+>>> print(x)
+Lighting3 [subtype=Ikea Koppla, seqnbr=None, id=1:234, cmnd=None, battery=None, rssi=None]
+>>> print(x.system)
+1
+>>> print(x.channel1)
+52
+>>> print(x.channel2)
+2
+>>> print(x.channel)
+564
+>>> x.parse_id(0, "G:234")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "10234")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "1:23X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Lighting4
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting4()
+>>> print(x)
+Lighting4 [subtype=None, seqnbr=None, cmd=None, pulse=None, rssi=None]
+>>> x.load_receive(bytearray([0x09, 0x13, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x01, 0x5e, 0x70]))
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=42, cmd=123456, pulse=350, rssi=7]
+>>> 
+>>> print(list(x.data))
+[9, 19, 0, 42, 18, 52, 86, 1, 94, 112]
+>>> 
+>>> print(x.packetlength)
+9
+>>> print(x.packettype)
+19
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+PT2262
+>>> print(x.seqnbr)
+42
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> print(x.id_string)
+123456
+>>> print(x.pulsehigh)
+1
+>>> print(x.pulselow)
+94
+>>> print(x.pulse)
+350
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting4()
+>>> x.set_transmit(0x00, 0x2a, 0x123456, 0x15e)
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=42, cmd=123456, pulse=350, rssi=0]
+>>> 
+>>> print(list(x.data))
+[9, 19, 0, 42, 18, 52, 86, 1, 94, 0]
+>>> 
+>>> print(x.packetlength)
+9
+>>> print(x.packettype)
+19
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+PT2262
+>>> print(x.seqnbr)
+42
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> print(x.id_string)
+123456
+>>> print(x.pulsehigh)
+1
+>>> print(x.pulselow)
+94
+>>> print(x.pulse)
+350
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> x = lowlevel.Lighting4()
+>>> x.parse_id(0, "123456")
+>>> print(x)
+Lighting4 [subtype=PT2262, seqnbr=None, cmd=123456, pulse=None, rssi=None]
+>>> print(x.cmd1)
+18
+>>> print(x.cmd2)
+52
+>>> print(x.cmd3)
+86
+>>> print(x.cmd)
+1193046
+>>> x.parse_id(0, "12345X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Lighting5
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting5()
+>>> print(x)
+Lighting5 [subtype=None, seqnbr=None, id=None, cmnd=None, level=None, rssi=None]
+>>> x.load_receive(bytearray([0x0a, 0x14, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x07, 0x10, 0x11, 0x70]))
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=42, id=123456:7, cmnd=Set level, level=17, rssi=7]
+>>> 
+>>> print(list(x.data))
+[10, 20, 0, 42, 18, 52, 86, 7, 16, 17, 112]
+>>> print(x.packetlength)
+10
+>>> print(x.packettype)
+20
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+LightwaveRF, Siemens
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> print(x.id_string)
+123456:7
+>>> print(x.cmnd)
+16
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+17
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting5()
+>>> x.set_transmit(0x00, 0x2a, 0x123456, 0x07, 0x10, 0x11)
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=42, id=123456:7, cmnd=Set level, level=17, rssi=0]
+>>> 
+>>> print(list(x.data))
+[10, 20, 0, 42, 18, 52, 86, 7, 16, 17, 0]
+>>> print(x.packetlength)
+10
+>>> print(x.packettype)
+20
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+LightwaveRF, Siemens
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> print(x.id_string)
+123456:7
+>>> print(x.cmnd)
+16
+>>> print(x.cmnd_string)
+Set level
+>>> print(x.level)
+17
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> x = lowlevel.Lighting5()
+>>> x.parse_id(0, "123456:7")
+>>> print(x)
+Lighting5 [subtype=LightwaveRF, Siemens, seqnbr=None, id=123456:7, cmnd=None, level=None, rssi=None]
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id3)
+86
+>>> print(x.id_combined)
+1193046
+>>> print(x.unitcode)
+7
+>>> x.parse_id(0, "123456:X")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345X:7")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345677")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "1234567:8")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345:8")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Lighting6
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Lighting6()
+>>> print(x)
+Lighting6 [subtype=None, seqnbr=None, id=None, cmnd=None, cmndseqnbr=None, rssi=None]
+>>> x.load_receive(bytearray([0x0b, 0x15, 0x00, 0x2a, 0x12, 0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]))
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=42, id=1234:A5, cmnd=Group off, cmndseqnbr=1, rssi=7]
+>>> 
+>>> print(list(x.data))
+[11, 21, 0, 42, 18, 52, 65, 5, 3, 1, 0, 112]
+>>> 
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+21
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Blyss
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234:A5
+>>> print(x.cmnd)
+3
+>>> print(x.cmnd_string)
+Group off
+>>> print(x.cmndseqnbr)
+1
+>>> print(x.rfu)
+0
+>>> print(x.rssi_byte)
+112
+>>> print(x.rssi)
+7
+>>> 
+>>> x = lowlevel.Lighting6()
+>>> x.set_transmit(0x00, 0x2a, 0x1234, 0x41, 0x05, 0x03, 0x01)
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=42, id=1234:A5, cmnd=Group off, cmndseqnbr=1, rssi=0]
+>>> 
+>>> print(list(x.data))
+[11, 21, 0, 42, 18, 52, 65, 5, 3, 1, 0, 0]
+>>> 
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+21
+>>> print(x.subtype)
+0
+>>> print(x.type_string)
+Blyss
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> print(x.id_string)
+1234:A5
+>>> print(x.cmnd)
+3
+>>> print(x.cmnd_string)
+Group off
+>>> print(x.cmndseqnbr)
+1
+>>> print(x.rfu)
+0
+>>> print(x.rssi_byte)
+0
+>>> print(x.rssi)
+0
+>>> x = lowlevel.Lighting6()
+>>> x.parse_id(0, "1234:A5")
+>>> print(x)
+Lighting6 [subtype=Blyss, seqnbr=None, id=1234:A5, cmnd=None, cmndseqnbr=None, rssi=None]
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_combined)
+4660
+>>> print(x.groupcode)
+65
+>>> print(x.unitcode)
+5
+>>> x.parse_id(0, "1234:AA")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123X:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "12345:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+>>> x.parse_id(0, "123:A5")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "RFXtrx/lowlevel.py", line 280, in parse_id
+    raise ValueError("Invalid id_string")
+ValueError: Invalid id_string
+
+
+Curtain1
+--------
+
+Blinds1
+-------
+
+Security1
+---------
+
+Camera1
+-------
+
+Remote1
+-------
+
+Thermostat1
+-----------
+
+Thermostat2
+-----------
+
+Thermostat3
+-----------
+
+Temp
+----
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Temp()
+>>> print(x)
+Temp [subtype=None, seqnbr=None, id=None, temp=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x08, 0x50, 0x02, 0x2a, 0x96, 0x03, 0x81, 0x41, 0x79]))
+>>> print(x)
+Temp [subtype=THC238/268,THN132,THWR288,THRN122,THN122,AW129/131, seqnbr=42, id=96:03, temp=-32.1, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[8, 80, 2, 42, 150, 3, 129, 65, 121]
+>>> print(x.packetlength)
+8
+>>> print(x.packettype)
+80
+>>> print(x.subtype)
+2
+>>> print(x.type_string)
+THC238/268,THN132,THWR288,THRN122,THN122,AW129/131
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+150
+>>> print(x.id2)
+3
+>>> print(x.id_string)
+96:03
+>>> print(x.temphigh)
+129
+>>> print(x.templow)
+65
+>>> print(x.temp)
+-32.1
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+
+
+Humid
+-----
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Humid()
+>>> print(x)
+Humid [subtype=None, seqnbr=None, id=None, humidity=None, humidity_status=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x08, 0x51, 0x01, 0x2a, 0x96, 0x03, 0x60, 0x03, 0x79]))
+>>> print(x)
+Humid [subtype=LaCrosse TX3, seqnbr=42, id=96:03, humidity=96, humidity_status=3, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[8, 81, 1, 42, 150, 3, 96, 3, 121]
+>>> print(x.packetlength)
+8
+>>> print(x.packettype)
+81
+>>> print(x.subtype)
+1
+>>> print(x.type_string)
+LaCrosse TX3
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+150
+>>> print(x.id2)
+3
+>>> print(x.id_string)
+96:03
+>>> print(x.humidity)
+96
+>>> print(x.humidity_status)
+3
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+
+
+TempHumid
+---------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.TempHumid()
+>>> print(x)
+TempHumid [subtype=None, seqnbr=None, id=None, temp=None, humidity=None, humidity_status=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x0a, 0x52, 0x01, 0x2a, 0x96, 0x03, 0x81, 0x41, 0x60, 0x03, 0x79]))
+>>> print(x)
+TempHumid [subtype=THGN122/123, THGN132, THGR122/228/238/268, seqnbr=42, id=96:03, temp=-32.1, humidity=96, humidity_status=3, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[10, 82, 1, 42, 150, 3, 129, 65, 96, 3, 121]
+>>> print(x.packetlength)
+10
+>>> print(x.packettype)
+82
+>>> print(x.subtype)
+1
+>>> print(x.type_string)
+THGN122/123, THGN132, THGR122/228/238/268
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+150
+>>> print(x.id2)
+3
+>>> print(x.id_string)
+96:03
+>>> print(x.temphigh)
+129
+>>> print(x.templow)
+65
+>>> print(x.temp)
+-32.1
+>>> print(x.humidity)
+96
+>>> print(x.humidity_status)
+3
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+
+
+Baro
+----
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Baro()
+>>> print(x)
+Baro [subtype=None, seqnbr=None, id=None, baro=None, forecast=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x09, 0x53, 0x01, 0x2a, 0x96, 0x03, 0x04, 0x06, 0x00, 0x79]))
+>>> print(x)
+Baro [subtype=Unknown type (0x53/0x01), seqnbr=42, id=96:03, baro=1030, forecast=0, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[9, 83, 1, 42, 150, 3, 4, 6, 0, 121]
+>>> print(x.packetlength)
+9
+>>> print(x.packettype)
+83
+>>> print(x.subtype)
+1
+>>> print(x.type_string)
+Unknown type (0x53/0x01)
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+150
+>>> print(x.id2)
+3
+>>> print(x.id_string)
+96:03
+>>> print(x.baro1)
+4
+>>> print(x.baro2)
+6
+>>> print(x.baro)
+1030
+>>> print(x.forecast)
+0
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+
+
+TempHumidBaro
+-------------
+
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.TempHumidBaro()
+>>> print(x)
+TempHumidBaro [subtype=None, seqnbr=None, id=None, temp=None, humidity=None, humidity_status=None, baro=None, forecast=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x0d, 0x54, 0x01, 0x2a, 0x96, 0x03, 0x81, 0x41, 0x60, 0x03, 0x04, 0x06, 0x00, 0x79]))
+>>> print(x)
+TempHumidBaro [subtype=BTHR918, seqnbr=42, id=96:03, temp=-32.1, humidity=96, humidity_status=3, baro=1030, forecast=0, battery=9, rssi=7]
+>>> 
+>>> print(list(x.data))
+[13, 84, 1, 42, 150, 3, 129, 65, 96, 3, 4, 6, 0, 121]
+>>> print(x.packetlength)
+13
+>>> print(x.packettype)
+84
+>>> print(x.subtype)
+1
+>>> print(x.type_string)
+BTHR918
+>>> print(x.seqnbr)
+42
+>>> print(x.id1)
+150
+>>> print(x.id2)
+3
+>>> print(x.id_string)
+96:03
+>>> print(x.temphigh)
+129
+>>> print(x.templow)
+65
+>>> print(x.temp)
+-32.1
+>>> print(x.humidity)
+96
+>>> print(x.humidity_status)
+3
+>>> print(x.baro1)
+4
+>>> print(x.baro2)
+6
+>>> print(x.baro)
+1030
+>>> print(x.forecast)
+0
+>>> print(x.rssi_byte)
+121
+>>> print(x.rssi)
+7
+>>> print(x.battery)
+9
+
+
+Rain
+----
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Rain()
+>>> print(x)
+Rain [subtype=None, seqnbr=None, id=None, rainrate=None, raintotal=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x0b, 0x55, 0x02, 0x03, 0x12, 0x34, 0x02, 0x50, 0x01, 0x23, 0x45, 0x57]))
+>>> print(x)
+Rain [subtype=PCR800, seqnbr=3, id=12:34, rainrate=5.92, raintotal=7456.5, battery=7, rssi=5]
+>>> 
+>>> print(list(x.data))
+[11, 85, 2, 3, 18, 52, 2, 80, 1, 35, 69, 87]
+>>> print(x.packetlength)
+11
+>>> print(x.packettype)
+85
+>>> print(x.subtype)
+2
+>>> print(x.type_string)
+PCR800
+>>> print(x.seqnbr)
+3
+>>> print(x.id1)
+18
+>>> print(x.id2)
+52
+>>> print(x.id_string)
+12:34
+>>> print(x.rainrate1)
+2
+>>> print(x.rainrate2)
+80
+>>> print(x.rainrate)
+5.92
+>>> print(x.raintotal1)
+1
+>>> print(x.raintotal2)
+35
+>>> print(x.raintotal3)
+69
+>>> print(x.raintotal)
+7456.5
+>>> print(x.rssi_byte)
+87
+>>> print(x.rssi)
+5
+>>> print(x.battery)
+7
+
+
+Wind
+----
+>>> from RFXtrx import lowlevel
+>>> 
+>>> x = lowlevel.Wind()
+>>> print(x)
+Wind [subtype=None, seqnbr=None, id=None, direction=None, average_speed=None, gust=None, temperature=None, chill=None, battery=None, rssi=None]
+>>> x.load_receive(bytearray([0x10, 0x56, 0x01, 0x03, 0x2F, 0x00, 0x00, 0xF7, 0x00, 0x20, 0x00, 0x24, 0x81, 0x60, 0x82, 0x50, 0x59]))
+>>> print(x)
+Wind [subtype=WTGR800, seqnbr=3, id=2f:00, direction=247, average_speed=3.2, gust=3.6, temperature=-35.2, chill=-59.2, battery=9, rssi=5]
+>>> 
+>>> print(list(x.data))
+[16, 86, 1, 3, 47, 0, 0, 247, 0, 32, 0, 36, 129, 96, 130, 80, 89]
+>>> print(x.packetlength)
+16
+>>> print(x.packettype)
+86
+>>> print(x.subtype)
+1
+>>> print(x.type_string)
+WTGR800
+>>> print(x.seqnbr)
+3
+>>> print(x.id1)
+47
+>>> print(x.id2)
+0
+>>> print(x.id_string)
+2f:00
+>>> print(x.direction)
+247
+>>> print(x.average_speed)
+3.2
+>>> print(x.gust)
+3.6
+>>> print(x.temperature)
+-35.2
+>>> print(x.chill)
+-59.2
+>>> print(x.rssi_byte)
+89
+>>> print(x.rssi)
+5
+>>> print(x.battery)
+9
+
+
+
+UV
+--
+
+DateTime
+--------
+
+Current
+-------
+
+Energy
+------
+
+Weight
+------
+
+RFXSensor
+---------
+
+RFXMeter
+--------
+
+FS20
+----
+
