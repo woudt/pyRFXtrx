@@ -459,7 +459,10 @@ class DummyTransport(RFXtrxTransport):
         if self.debug:
             print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
 
+
 class DummyTransport2(PySerialTransport):
+    """ Dummy transport for testing purposes """
+    #  pylint: disable=super-init-not-called
     def __init__(self, device="", debug=True):
         self.serial = _dummySerial(device, 38400, timeout=0.1)
         self.debug = debug
