@@ -23,11 +23,11 @@ This module provides the base implementation for pyRFXtrx
 # pylint: disable=R0903
 from __future__ import print_function
 
+import serial
 from threading import Thread
 from time import sleep
 from . import lowlevel
 
-import serial
 
 ###############################################################################
 # RFXtrxDevice class
