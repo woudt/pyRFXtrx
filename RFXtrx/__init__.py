@@ -25,13 +25,14 @@ from __future__ import print_function
 
 from threading import Thread
 from time import sleep
-from serial import Serial
 from . import lowlevel
 
+import serial
 
 ###############################################################################
 # RFXtrxDevice class
 ###############################################################################
+
 
 class RFXtrxDevice(object):
     """ Superclass for all devices """
@@ -393,8 +394,13 @@ class PySerialTransport(RFXtrxTransport):
     """ Implementation of a transport using PySerial """
 
     def __init__(self, port, debug=False):
-        self.serial = Serial(port, 38400, timeout=0.1)
         self.debug = debug
+        try:
+            self.serial = serial.Serial(port, 38400, timeout=0.1)
+        except serial.SerialException:
+            import glob
+            port = glob.glob('/dev/serial/by-id/usb-RFXCOM_*-port0')[0]
+            self.serial = serial.Serial(port, 38400, timeout=0.1)
 
     def receive_blocking(self):
         """ Wait until a packet is received and return with an RFXtrxEvent """
