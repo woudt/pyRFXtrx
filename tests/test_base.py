@@ -8,10 +8,6 @@ def _callback(*args, **kwargs):
     global num_calbacks             
     num_calbacks = num_calbacks + 1
 
-class _dummyTransport(RFXtrx.PySerialTransport):
-    def __init__(self, device="", debug=True):
-        self.serial = RFXtrx._dummySerial(device, 38400, timeout=0.1)
-        self.debug = debug
 
 class CoreTestCase(TestCase):
 
@@ -24,7 +20,7 @@ class CoreTestCase(TestCase):
 
     def test_constructor(self):    
         device = '/dev/serial/...'
-        core = RFXtrx.Core(device, event_callback=_callback, debug=False,transport_protocol=_dummyTransport)
+        core = RFXtrx.Core(device, event_callback=_callback, debug=False,transport_protocol=RFXtrx.DummyTransport2)
         global num_calbacks
         while num_calbacks < 5:
             time.sleep(0.1)        

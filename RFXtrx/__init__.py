@@ -279,7 +279,6 @@ class ControlEvent(RFXtrxEvent):
 
         self.values = {}
         self.values['Command'] = pkt.value('cmnd_string')
-
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
             dimmable = True
             self.values['Dim level'] = (pkt.level + 1) * 100 // 16
@@ -459,6 +458,11 @@ class DummyTransport(RFXtrxTransport):
         pkt = bytearray(data)
         if self.debug:
             print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+
+class DummyTransport2(PySerialTransport):
+    def __init__(self, device="", debug=True):
+        self.serial = _dummySerial(device, 38400, timeout=0.1)
+        self.debug = debug
 
 
 class Connect(object):
