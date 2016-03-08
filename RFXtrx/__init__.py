@@ -493,7 +493,7 @@ class DummyTransport2(PySerialTransport):
 
 
 class Connect(object):
-    """The main class for rfxcom-py.
+    """ The main class for rfxcom-py.
     Has methods for sensors.
     """
 
@@ -524,7 +524,7 @@ class Connect(object):
                     self._sensors[event.device.id_string] = event.device
 
     def sensors(self):
-        """Return all found sensors.
+        """ Return all found sensors.
         :return: dict of :class:`Sensor` instances.
         """
         return self._sensors
@@ -537,4 +537,4 @@ class Connect(object):
 
 
 class Core(Connect):
-    "The main class for rfxcom-py. Has changed name to Connect"
+    """ The main class for rfxcom-py. Has changed name to Connect """
