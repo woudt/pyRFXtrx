@@ -352,6 +352,7 @@ class _dummySerial(object):
         self._read_num = self._read_num + 1
         if self._read_num >= len(self._data):
             self._read_num = 0
+            sleep(1)
         return res
 
 
@@ -384,6 +385,9 @@ class RFXtrxTransport(object):
         """ reset the rfxtrx device """
         pass
 
+    def close(self):
+        """ close connection to rfxtrx device """
+        pass
 
 ###############################################################################
 # PySerialTransport class
@@ -395,6 +399,7 @@ class PySerialTransport(RFXtrxTransport):
 
     def __init__(self, port, debug=False):
         self.debug = debug
+        self._stop = False
         try:
             self.serial = serial.Serial(port, 38400, timeout=0.1)
         except serial.serialutil.SerialException:
@@ -407,7 +412,7 @@ class PySerialTransport(RFXtrxTransport):
 
     def receive_blocking(self):
         """ Wait until a packet is received and return with an RFXtrxEvent """
-        while True:
+        while not self._stop:
             data = self.serial.read()
             if len(data) > 0:
                 if data == '\x00':
@@ -439,6 +444,11 @@ class PySerialTransport(RFXtrxTransport):
         self.serial.flushInput()
         self.send(b'\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         return self.receive_blocking()
+
+    def close(self):
+        """ close connection to rfxtrx device """
+        self._stop = True
+        self.serial.close()
 
 
 class DummyTransport(RFXtrxTransport):
@@ -475,6 +485,11 @@ class DummyTransport2(PySerialTransport):
     def __init__(self, device="", debug=True):
         self.serial = _dummySerial(device, 38400, timeout=0.1)
         self.debug = debug
+        self._stop = False
+
+    def close(self):
+        """ close connection to rfxtrx device """
+        self._stop = True
 
 
 class Connect(object):
@@ -489,15 +504,18 @@ class Connect(object):
         self.transport = None
         self.transport_protocol = transport_protocol
 
-        self.thread = Thread(target=self._connect, args=(device, debug))
-        self.thread.setDaemon(True)
-        self.thread.start()
+        self._shutdown = False
+        self._thread = Thread(target=self._connect, args=(device, debug))
+        self._thread.setDaemon(True)
+        self._thread.start()
+        while not self.transport:
+            sleep(0.1)
 
     def _connect(self, device, debug):
         """Connect """
         self.transport = self.transport_protocol(device, debug)
         self.transport.reset()
-        while True:
+        while not self._shutdown:
             event = self.transport.receive_blocking()
             if isinstance(event, RFXtrxEvent):
                 if self._event_callback:
@@ -510,6 +528,12 @@ class Connect(object):
         :return: dict of :class:`Sensor` instances.
         """
         return self._sensors
+
+    def close_connection(self):
+        """ Close connection to rfxtrx device """
+        self.transport.close()
+        self._shutdown = True
+        self._thread.join()
 
 
 class Core(Connect):
