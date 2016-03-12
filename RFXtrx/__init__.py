@@ -23,8 +23,8 @@ This module provides the base implementation for pyRFXtrx
 # pylint: disable=R0903
 from __future__ import print_function
 
-from threading import Thread
 from time import sleep
+import threading
 import serial
 from . import lowlevel
 
@@ -355,6 +355,10 @@ class _dummySerial(object):
             sleep(1)
         return res
 
+    def close(self):
+        """ close connection to rfxtrx device """
+        pass
+
 
 ###############################################################################
 # RFXtrxTransport class
@@ -362,6 +366,7 @@ class _dummySerial(object):
 
 class RFXtrxTransport(object):
     """ Abstract superclass for all transport mechanisms """
+
     # pylint: disable=attribute-defined-outside-init
     @staticmethod
     def parse(data):
@@ -399,7 +404,8 @@ class PySerialTransport(RFXtrxTransport):
 
     def __init__(self, port, debug=False):
         self.debug = debug
-        self._stop = False
+        self._run_event = threading.Event()
+        self._run_event.set()
         try:
             self.serial = serial.Serial(port, 38400, timeout=0.1)
         except serial.serialutil.SerialException:
@@ -412,7 +418,7 @@ class PySerialTransport(RFXtrxTransport):
 
     def receive_blocking(self):
         """ Wait until a packet is received and return with an RFXtrxEvent """
-        while not self._stop:
+        while self._run_event.is_set():
             data = self.serial.read()
             if len(data) > 0:
                 if data == '\x00':
@@ -447,7 +453,7 @@ class PySerialTransport(RFXtrxTransport):
 
     def close(self):
         """ close connection to rfxtrx device """
-        self._stop = True
+        self._run_event.clear()
         self.serial.close()
 
 
@@ -455,8 +461,8 @@ class DummyTransport(RFXtrxTransport):
     """ Dummy transport for testing purposes """
 
     def __init__(self, device="", debug=True):
-        self.debug = debug
         self.device = device
+        self.debug = debug
 
     def receive(self, data=None):
         """ Emulate a receive by parsing the given data """
@@ -485,37 +491,31 @@ class DummyTransport2(PySerialTransport):
     def __init__(self, device="", debug=True):
         self.serial = _dummySerial(device, 38400, timeout=0.1)
         self.debug = debug
-        self._stop = False
-
-    def close(self):
-        """ close connection to rfxtrx device """
-        self._stop = True
+        self._run_event = threading.Event()
+        self._run_event.set()
 
 
 class Connect(object):
     """ The main class for rfxcom-py.
     Has methods for sensors.
     """
-
+    #  pylint: disable=too-many-instance-attributes
     def __init__(self, device, event_callback=None, debug=False,
                  transport_protocol=PySerialTransport):
+        self._run_event = threading.Event()
+        self._run_event.set()
         self._sensors = {}
         self._event_callback = event_callback
-        self.transport = None
-        self.transport_protocol = transport_protocol
 
-        self._shutdown = False
-        self._thread = Thread(target=self._connect, args=(device, debug))
+        self.transport = transport_protocol(device, debug)
+        self._thread = threading.Thread(target=self._connect)
         self._thread.setDaemon(True)
         self._thread.start()
-        while not self.transport:
-            sleep(0.1)
 
-    def _connect(self, device, debug):
+    def _connect(self):
         """Connect """
-        self.transport = self.transport_protocol(device, debug)
         self.transport.reset()
-        while not self._shutdown:
+        while self._run_event.is_set():
             event = self.transport.receive_blocking()
             if isinstance(event, RFXtrxEvent):
                 if self._event_callback:
@@ -531,8 +531,8 @@ class Connect(object):
 
     def close_connection(self):
         """ Close connection to rfxtrx device """
+        self._run_event.clear()
         self.transport.close()
-        self._shutdown = True
         self._thread.join()
 
 
