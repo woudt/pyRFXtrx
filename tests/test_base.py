@@ -72,6 +72,10 @@ class CoreTestCase(TestCase):
         event = core.transport.parse(bytes_array)
         event.device.send_on(core.transport)
         event.device.send_off(core.transport)
+        event.device.send_open(core.transport)
+        event.device.send_close(core.transport)
+        event.device.send_stop(core.transport)
+        self.assertRaises(ValueError,event.device.send_openclosestop,core.transport,0x0c)
         self.assertRaises(ValueError,event.device.send_dim,core.transport,150)
         self.assertRaises(ValueError,event.device.send_dim,core.transport,-1)
         event.device.send_dim(core.transport,50)
@@ -324,5 +328,3 @@ class CoreTestCase(TestCase):
         self.assertEquals(RFXtrx.StatusEvent, type(event))
         self.assertEquals(event.__str__(),"<class 'RFXtrx.StatusEvent'> device=[Status [subtype=433.92MHz, firmware=69, devices=['ac', 'arc', 'hideki', 'homeeasy', 'lacrosse', 'oregon', 'x10']]]")
         core.close_connection()
-
-    

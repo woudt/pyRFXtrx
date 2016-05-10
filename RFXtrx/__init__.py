@@ -123,6 +123,31 @@ class LightingDevice(RFXtrxDevice):
         """ Send an 'Off' command using the given transport """
         self.send_onoff(transport, False)
 
+    def send_openclosestop(self, transport, command):
+        """ Send an 'Open' or a 'Close' or a 'Stop' command
+            using the given transport """
+        if self.packettype == 0x14:  # Lighting5
+            if command not in [0x0d, 0x0e, 0x0f]:
+                raise ValueError(command, "is not a relay packet in Lighting5")
+            pkt = lowlevel.Lighting5()
+            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
+                             command, 0x00)
+            transport.send(pkt.data)
+        else:
+            raise ValueError("Unsupported packettype")
+
+    def send_open(self, transport):
+        """ Send an 'Open' command using the given transport """
+        self.send_openclosestop(transport, 0x0f)
+
+    def send_close(self, transport):
+        """ Send an 'Close' command using the given transport """
+        self.send_openclosestop(transport, 0x0d)
+
+    def send_stop(self, transport):
+        """ Send an 'Stop' command using the given transport """
+        self.send_openclosestop(transport, 0x0e)
+
     def send_dim(self, transport, level):
         """ Send a 'Dim' command with the given level using the given
             transport
