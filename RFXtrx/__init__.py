@@ -43,6 +43,7 @@ class RFXtrxDevice(object):
         self.type_string = pkt.type_string
         self.id_string = pkt.id_string
         self.known_to_be_dimmable = False
+        self.known_to_be_rollershutter = False
 
     def __eq__(self, other):
         if self.packettype != other.packettype:
@@ -314,6 +315,10 @@ class ControlEvent(RFXtrxEvent):
         else:
             dimmable = False
         self.device.known_to_be_dimmable = dimmable
+
+        if isinstance(pkt, lowlevel.Lighting5) \
+                and pkt.cmnd in [0x0d, 0x0e, 0x0f]:
+            self.device.known_to_be_rollershutter = True
 
         self.values['Rssi numeric'] = pkt.rssi
 

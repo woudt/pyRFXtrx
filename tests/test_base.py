@@ -81,6 +81,13 @@ class CoreTestCase(TestCase):
         event.device.send_dim(core.transport,50)
         event.device.send_dim(core.transport,0)
 
+        # Lighting5, subtype0, rollershutter
+        bytes_array = bytearray(b'\x0A\x14\x00\xAD\xF3\x94\xAB\x01\x0D\x00\x60')
+        event = core.transport.parse(bytes_array)
+        event.device.send_open(core.transport)
+        event.device.send_close(core.transport)
+        event.device.send_stop(core.transport)
+
         # Lighting5, subtype1
         bytes_array = bytearray(b'\x0A\x14\x01\xAD\xF3\x94\xAB\x01\x10\x00\x60')
         event = core.transport.parse(bytes_array)
