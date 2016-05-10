@@ -12,7 +12,7 @@ Using
 Instally via pip
 
 ::
-   $ sudo pip install -U pyRFXtrx
+   $ pip install -U pyRFXtrx
 
 After that, see the examples in the examples directory
 
