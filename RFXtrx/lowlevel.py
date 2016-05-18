@@ -1578,7 +1578,7 @@ class Energy(SensorPacket):
                             (data[9] << 8) + data[10])
         self.totalwatts = ((data[11] * pow(2, 40)) + (data[12] * pow(2, 32)) +
                            (data[13] * pow(2, 24)) + (data[14] << 16) +
-                           (data[15] << 8) + data[15]) / 223.666
+                           (data[15] << 8) + data[16]) / 223.666
 
         if self.subtype == 0x03:
             self.battery = data[17] + 1 * 10
