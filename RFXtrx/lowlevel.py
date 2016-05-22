@@ -52,6 +52,8 @@ def parse(data):
         pkt = Lighting6()
     elif data[1] == 0x16:
         pkt = Chime()
+    elif data[1] == 0x1A:
+        pkt = Rfy()
     elif data[1] == 0x20:
         pkt = Security1()
     elif data[1] == 0x50:
@@ -1760,3 +1762,117 @@ class Security1(SensorPacket):
                                                          self.subtype)
         if self.security1_status in self.STATUS:
             self.security1_status_string = self.STATUS[self.security1_status]
+
+###############################################################################
+# Rfy class
+###############################################################################
+
+
+class Rfy(Packet):
+    """
+    Data class for the Rfy packet type
+    """
+    TYPES = {0x00: 'Rfy'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    COMMANDS = {0x00: 'Stop',
+                0x01: 'Up',
+                0x03: 'Down'}
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
+    """
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Rfy [subtype={0}, seqnbr={1}, id={2}, cmnd={3}]" \
+            .format(
+                self.subtype,
+                self.seqnbr,
+                self.id_string,
+                self.cmnd_string
+            )
+
+    def __init__(self):
+        """Constructor"""
+        super(Rfy, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.id3 = None
+        self.id_combined = None
+        self.unitcode = None
+        self.cmnd = None
+        self.cmnd_string = None
+
+    def parse_id(self, subtype, id_string):
+        """( a string id into individual components"""
+        try:
+            self.packettype = 0x1a
+            self.subtype = subtype
+            self.id_combined = int(id_string[:6], 16)
+            self.id1 = self.id_combined >> 16
+            self.id2 = self.id_combined >> 8 & 0xff
+            self.id3 = self.id_combined & 0xff
+            self.unitcode = int(id_string[7:])
+            self._set_strings()
+        except:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.id3 = data[6]
+        self.unitcode = data[7]
+        if self.packetlength > 7:
+            self.cmnd = data[8]
+
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        self._set_strings()
+
+    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd):
+        """Load data from individual data fields"""
+        self.packetlength = 0x08
+        self.packettype = 0x1a
+        self.subtype = subtype
+        self.seqnbr = seqnbr
+        self.id_combined = id_combined
+        self.id1 = id_combined >> 16
+        self.id2 = id_combined >> 8 & 0xff
+        self.id3 = id_combined & 0xff
+        self.unitcode = unitcode
+        self.cmnd = cmnd
+        self.data = bytearray([self.packetlength, self.packettype,
+                               self.subtype, self.seqnbr,
+                               self.id1, self.id2, self.id3, self.unitcode,
+                               self.cmnd])
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:06x}:{1}".format(self.id_combined,
+                                              self.unitcode)
+
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)

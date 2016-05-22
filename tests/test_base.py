@@ -183,6 +183,15 @@ class CoreTestCase(TestCase):
         self.assertEquals(RFXtrx.ControlEvent, type(event))
         self.assertEquals(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.LightingDevice'> type='LightwaveRF, Siemens' id='f394ab:1'] values=[('Command', 'On'), ('Rssi numeric', 6)]")
 
+        #Rfy
+        bytes_array = bytearray(b'\x08\x1A\x00\x00\x0A\x00\x01\x01\x03')
+        event= core.transport.receive(bytes_array)
+        self.assertEquals(RFXtrx.ControlEvent, type(event))
+        self.assertEquals(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.RfyDevice'> type='Rfy' id='0a0001:1'] values=[('Command', 'Down')]")
+        event.device.send_open(core.transport)
+        event.device.send_close(core.transport)
+        event.device.send_stop(core.transport)
+
         #temphumid
         bytes_array = [0x0a, 0x52, 0x01, 0x2a, 0x96, 0x03, 0x81, 0x41, 0x60, 0x03, 0x79]
         event = core.transport.parse(bytes_array)
