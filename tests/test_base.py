@@ -176,6 +176,12 @@ class CoreTestCase(TestCase):
         self.assertEquals(RFXtrx.SensorEvent, type(event))
         self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='WTGR800' id='2f:00'] values=[('Battery numeric', 9), ('Chill', -59.2), ('Rssi numeric', 5), ('Temperature', -35.2), ('Wind average speed', 3.2), ('Wind direction', 247), ('Wind gust', 3.6)]")
 
+        #Elec4
+        bytes_array = [0x13, 0x5b, 0x01, 0x04, 0x2e, 0xB2, 0x01, 0x11, 0x12, 0x14, 0x15, 0x17, 0x18, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x69]
+        event = core.transport.parse(bytes_array)
+        self.assertEquals(RFXtrx.SensorEvent, type(event))
+        self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='CM180i' id='2e:b2'] values=[('Battery numeric', 9), ('Count', 1), ('Current Ch. 1', 437.0), ('Current Ch. 2', 514.1), ('Current Ch. 3', 591.2), ('Rssi numeric', 6), ('Total usage', 113527617921.3023)]")
+
         #Lighting5
         bytes_array = bytearray(b'\x0A\x14\x00\xAD\xF3\x94\xAB'
                                 b'\x01\x01\x00\x60')

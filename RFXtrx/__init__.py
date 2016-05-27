@@ -268,11 +268,15 @@ class SensorEvent(RFXtrxEvent):
             self.values['Wind gust'] = pkt.gust
             self.values['Temperature'] = pkt.temperature
             self.values['Chill'] = pkt.chill
-        self.values['Battery numeric'] = pkt.battery
-        self.values['Rssi numeric'] = pkt.rssi
         if isinstance(pkt, lowlevel.Energy):
             self.values['Energy usage'] = pkt.currentwatt
             self.values['Total usage'] = pkt.totalwatts
+            self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Energy4):
+            self.values['Current Ch. 1'] = pkt.currentamps1
+            self.values['Current Ch. 2'] = pkt.currentamps2
+            self.values['Current Ch. 3'] = pkt.currentamps3
+            self.values['Total usage'] = pkt.totalwatthours
             self.values['Count'] = pkt.count
         if isinstance(pkt, lowlevel.Chime):
             self.values['Sound'] = pkt.sound
