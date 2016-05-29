@@ -61,6 +61,56 @@ class RFXtrxDevice(object):
 # SwitchDevice class
 ###############################################################################
 
+class RfyDevice(RFXtrxDevice):
+    """ Concrete class for a roller device """
+    def __init__(self, pkt):
+        super(RfyDevice, self).__init__(pkt)
+        if isinstance(pkt, lowlevel.Rfy):
+            self.known_to_be_rollershutter = True
+            self.id_combined = pkt.id_combined
+            self.unitcode = pkt.unitcode
+            self.cmndseqnbr = 0
+
+    def send_close(self, transport):
+        """ Send a 'Close' command using the given transport """
+        pkt = lowlevel.Rfy()
+        pkt.set_transmit(
+            0x00,
+            self.cmndseqnbr,
+            self.id_combined,
+            self.unitcode,
+            0x03
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
+
+    def send_open(self, transport):
+        """ Send an 'Open' command using the given transport """
+        pkt = lowlevel.Rfy()
+        pkt.set_transmit(
+            0x00,
+            self.cmndseqnbr,
+            self.id_combined,
+            self.unitcode,
+            0x01
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
+
+    def send_stop(self, transport):
+        """ Send a 'Stop' command using the given transport """
+        pkt = lowlevel.Rfy()
+        pkt.set_transmit(
+            0x00,
+            self.cmndseqnbr,
+            self.id_combined,
+            self.unitcode,
+            0x00
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
+
+
 class LightingDevice(RFXtrxDevice):
     """ Concrete class for a control device """
 
@@ -217,6 +267,10 @@ def get_device(packettype, subtype, id_string):
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
+    elif packettype == 0x1A:  # Rfy
+        pkt = lowlevel.Rfy()
+        pkt.parse_id(subtype, id_string)
+        return RfyDevice(pkt)
     else:
         raise ValueError("Unsupported packettype")
 
@@ -304,6 +358,8 @@ class ControlEvent(RFXtrxEvent):
                 or isinstance(pkt, lowlevel.Lighting5) \
                 or isinstance(pkt, lowlevel.Lighting6):
             device = LightingDevice(pkt)
+        elif isinstance(pkt, lowlevel.Rfy):
+            device = RfyDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
@@ -324,7 +380,8 @@ class ControlEvent(RFXtrxEvent):
                 and pkt.cmnd in [0x0d, 0x0e, 0x0f]:
             self.device.known_to_be_rollershutter = True
 
-        self.values['Rssi numeric'] = pkt.rssi
+        if pkt.rssi is not None:
+            self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
