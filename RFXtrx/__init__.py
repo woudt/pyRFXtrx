@@ -247,6 +247,7 @@ class LightingDevice(RFXtrxDevice):
 
 def get_device(packettype, subtype, id_string):
     """ Return a device base on its identifying values """
+    # pylint: disable=too-many-return-statements
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
@@ -356,6 +357,7 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+    # pylint: disable=too-many-boolean-expressions
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
