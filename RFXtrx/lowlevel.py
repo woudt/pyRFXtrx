@@ -686,6 +686,8 @@ class Lighting4(Packet):
             # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.cmd is not None:
+            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd)
 
 
 ###############################################################################
