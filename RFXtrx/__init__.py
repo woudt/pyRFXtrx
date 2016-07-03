@@ -357,7 +357,7 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
-    # pylint: disable=too-many-boolean-expressions
+        # pylint: disable=too-many-boolean-expressions
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
