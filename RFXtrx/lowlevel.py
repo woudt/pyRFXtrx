@@ -688,7 +688,7 @@ class Lighting4(Packet):
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmd is not None:
-            self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd)
+            self.cmnd_string = "{0:#04x}".format(self.cmd)
 
 
 ###############################################################################
