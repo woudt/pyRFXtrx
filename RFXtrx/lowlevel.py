@@ -622,6 +622,7 @@ class Lighting4(Packet):
         self.pulsehigh = None
         self.pulselow = None
         self.pulse = None
+        self.cmnd_string = ""
 
     def parse_id(self, subtype, id_string):
         """Parse a string id into individual components"""
@@ -686,6 +687,8 @@ class Lighting4(Packet):
             # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.cmd is not None:
+            self.cmnd_string = "{0:#04x}".format(self.cmd)
 
 
 ###############################################################################

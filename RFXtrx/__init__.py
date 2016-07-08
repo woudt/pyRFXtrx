@@ -164,7 +164,7 @@ class LightingDevice(RFXtrxDevice):
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
-            raise ValueError("Unsupported packettype")
+            return
 
     def send_on(self, transport):
         """ Send an 'On' command using the given transport """
@@ -247,6 +247,7 @@ class LightingDevice(RFXtrxDevice):
 
 def get_device(packettype, subtype, id_string):
     """ Return a device base on its identifying values """
+    # pylint: disable=too-many-return-statements
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
@@ -257,6 +258,10 @@ def get_device(packettype, subtype, id_string):
         return LightingDevice(pkt)
     elif packettype == 0x12:  # Lighting3
         pkt = lowlevel.Lighting3()
+        pkt.parse_id(subtype, id_string)
+        return LightingDevice(pkt)
+    elif packettype == 0x13:  # Lighting4
+        pkt = lowlevel.Lighting4()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
     elif packettype == 0x14:  # Lighting5
@@ -352,9 +357,11 @@ class ControlEvent(RFXtrxEvent):
     """ Concrete class for control events """
 
     def __init__(self, pkt):
+        # pylint: disable=too-many-boolean-expressions
         if isinstance(pkt, lowlevel.Lighting1) \
                 or isinstance(pkt, lowlevel.Lighting2) \
                 or isinstance(pkt, lowlevel.Lighting3) \
+                or isinstance(pkt, lowlevel.Lighting4) \
                 or isinstance(pkt, lowlevel.Lighting5) \
                 or isinstance(pkt, lowlevel.Lighting6):
             device = LightingDevice(pkt)
