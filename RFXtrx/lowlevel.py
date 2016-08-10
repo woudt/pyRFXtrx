@@ -605,6 +605,18 @@ class Lighting4(Packet):
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
+    COMMANDS = {0x00: 'Off',
+                0x01: 'On',
+                0x02: 'Off',
+                0x03: 'On',
+                0x04: 'Off',
+                0x05: 'On',
+                0x07: 'On',
+                0x09: 'On',
+                0x0c: 'On'}
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
+    """
 
     def __str__(self):
         return ("Lighting4 [subtype={0}, seqnbr={1}, cmd={2}, pulse={3}, " +
@@ -688,7 +700,10 @@ class Lighting4(Packet):
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmd is not None:
-            self.cmnd_string = "{0:#04x}".format(self.cmd)
+            if self.cmd2 in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmd2]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd2)
 
 
 ###############################################################################
