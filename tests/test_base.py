@@ -58,14 +58,14 @@ class CoreTestCase(TestCase):
         event.device.send_off(core.transport)
         self.assertRaises(ValueError,event.device.send_dim,core.transport,50)
 
-        # Lighting4, not supported yet
+        # Lighting4
         bytes_array = [0x09, 0x13, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x01, 0x5e, 0x70]
         event = core.transport.parse(bytes_array)
         self.assertEquals(RFXtrx.ControlEvent, type(event))
         self.assertEquals(RFXtrx.LightingDevice, type(event.device))
-       # event.device.send_on(core.transport)
-       # event.device.send_off(core.transport)
-       # self.assertRaises(ValueError,event.device.send_dim,core.transport,50)
+        event.device.send_on(core.transport)
+        event.device.send_off(core.transport)
+        self.assertRaises(ValueError,event.device.send_dim,core.transport,50)
 
         # Lighting5, subtype0
         bytes_array = bytearray(b'\x0A\x14\x00\xAD\xF3\x94\xAB\x01\x10\x00\x60')
