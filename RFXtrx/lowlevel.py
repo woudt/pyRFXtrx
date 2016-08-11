@@ -703,7 +703,7 @@ class Lighting4(Packet):
             if self.cmd2 in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmd2]
             else:
-                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd2)
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd)
 
 
 ###############################################################################
