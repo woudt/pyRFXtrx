@@ -74,6 +74,8 @@ def parse(data):
         pkt = Energy()
     elif data[1] == 0x5B:
         pkt = Energy4()
+    elif data[1] == 0x71:
+        pkt = RfxMeter()
     else:
         return None
 
@@ -1316,6 +1318,65 @@ class Baro(SensorPacket):
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+
+###############################################################################
+# RFXMeter class
+###############################################################################
+
+class RfxMeter(Packet):
+    """
+    Data class for the RFXMeter packet type
+    """
+
+    TYPES = {0x00: 'RFXMeter Data Packet'}
+
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("RFXMeter [subtype={0}, seqnbr={1}, id={2}, value3={3}, " +
+                "value2={4}, value1={5}, value={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.value3, self.value2,
+                    self.value1, self.value, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(RfxMeter, self).__init__()
+        self.idbyte = None
+        self.value = None
+        self.value3 = None
+        self.value2 = None
+        self.value1 = None
+        self.type_string = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.idbyte = data[4]
+        self.value3 = data[7]
+        self.value2 = data[8]
+        self.value1 = data[9]
+        self.value = (self.value3 << 16) + (self.value2 << 8) + self.value1
+        self.rssi_byte = data[10]
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}".format(self.idbyte)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
 
 
 ###############################################################################
