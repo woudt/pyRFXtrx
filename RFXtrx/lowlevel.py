@@ -1324,7 +1324,7 @@ class Baro(SensorPacket):
 # RFXMeter class
 ###############################################################################
 
-class RfxMeter(Packet):
+class RfxMeter(SensorPacket):
     """
     Data class for the RFXMeter packet type
     """

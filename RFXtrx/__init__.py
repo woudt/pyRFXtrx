@@ -303,6 +303,8 @@ class SensorEvent(RFXtrxEvent):
         super(SensorEvent, self).__init__(device)
 
         self.values = {}
+        if isinstance(pkt, lowlevel.RfxMeter):
+            self.values['Value'] = pkt.value
         if isinstance(pkt, lowlevel.Temp) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
@@ -341,7 +343,8 @@ class SensorEvent(RFXtrxEvent):
             self.values['Sound'] = pkt.sound
         if isinstance(pkt, lowlevel.Security1):
             self.values['Sensor Status'] = pkt.security1_status_string
-        self.values['Battery numeric'] = pkt.battery
+        if not isinstance(pkt, lowlevel.RfxMeter):
+            self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
     def __str__(self):
@@ -473,6 +476,7 @@ class RFXtrxTransport(object):
             return None
         pkt = lowlevel.parse(data)
         if pkt is not None:
+            # print("Type = " + pkt.__class__ + " Id = " + pkt.id_string)
             if isinstance(pkt, lowlevel.SensorPacket):
                 obj = SensorEvent(pkt)
             elif isinstance(pkt, lowlevel.Status):
