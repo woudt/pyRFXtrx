@@ -476,7 +476,6 @@ class RFXtrxTransport(object):
             return None
         pkt = lowlevel.parse(data)
         if pkt is not None:
-            # print("Type = " + pkt.__class__ + " Id = " + pkt.id_string)
             if isinstance(pkt, lowlevel.SensorPacket):
                 obj = SensorEvent(pkt)
             elif isinstance(pkt, lowlevel.Status):
