@@ -242,7 +242,7 @@ class CoreTestCase(TestCase):
         self.assertEqual(event.device.subtype, 0x00)
         self.assertEqual(event.device.type_string, 'RFXMeter Data Packet')
         self.assertEqual(event.device.id_string, '21')
-        self.assertEquals(event.values['Value'], 2105252)
+        self.assertEquals(event.values['Counter value'], 2105252)
 
         #temphumidBaro, too short package length
         bytes_array = [0x10, 0x54, 0x01, 0x03, 0x2F, 0x00, 0x00, 0xF7, 0x00, 0x20, 0x00, 0x24, 0x81, 0x60, 0x82, 0x50]

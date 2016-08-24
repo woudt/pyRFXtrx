@@ -304,7 +304,7 @@ class SensorEvent(RFXtrxEvent):
 
         self.values = {}
         if isinstance(pkt, lowlevel.RfxMeter):
-            self.values['Value'] = pkt.value
+            self.values['Counter value'] = pkt.value
         if isinstance(pkt, lowlevel.Temp) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
