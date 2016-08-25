@@ -234,6 +234,16 @@ class CoreTestCase(TestCase):
         self.assertEquals(RFXtrx.SensorEvent, type(event))
         self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='BTHR918' id='2f:00'] values=[('Barometer', 36), ('Battery numeric', 0), ('Forecast', 'unknown forecast'), ('Forecast numeric', 129), ('Humidity', 0), ('Humidity status', 'unknown humidity'), ('Humidity status numeric', 32), ('Rssi numeric', 6), ('Temperature', 24.7)]")
 
+        #rfxmeter
+        # A 71 0 1F 21 D1 0 20 1F A4 60
+        bytes_array = [0x0A, 0x71, 0x00, 0x1F, 0x21, 0xD1, 0x00, 0x20, 0x1F, 0xA4, 0x60]
+        event = core.transport.parse(bytes_array)
+        self.assertEquals(RFXtrx.SensorEvent, type(event))
+        self.assertEqual(event.device.subtype, 0x00)
+        self.assertEqual(event.device.type_string, 'RFXMeter Data Packet')
+        self.assertEqual(event.device.id_string, '21')
+        self.assertEquals(event.values['Counter value'], 2105252)
+
         #temphumidBaro, too short package length
         bytes_array = [0x10, 0x54, 0x01, 0x03, 0x2F, 0x00, 0x00, 0xF7, 0x00, 0x20, 0x00, 0x24, 0x81, 0x60, 0x82, 0x50]
         event = core.transport.parse(bytes_array)
