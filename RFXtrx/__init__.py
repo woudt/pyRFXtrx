@@ -333,6 +333,15 @@ class SensorEvent(RFXtrxEvent):
             self.values['Energy usage'] = pkt.currentwatt
             self.values['Total usage'] = pkt.totalwatts
             self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Energy1):
+            self.values['Current Ch. 1'] = pkt.currentamps1
+            self.values['Current Ch. 2'] = pkt.currentamps2
+            self.values['Current Ch. 3'] = pkt.currentamps3
+            # CM113/ELEC1 doesn't have a 'total usage' counter, so provide an
+            # aggregated virtual value
+            self.values['Total usage'] = (pkt.currentamps1 + pkt.currentamps2
+                                          + pkt.currentamps3)
+            self.values['Count'] = pkt.count
         if isinstance(pkt, lowlevel.Energy4):
             self.values['Current Ch. 1'] = pkt.currentamps1
             self.values['Current Ch. 2'] = pkt.currentamps2

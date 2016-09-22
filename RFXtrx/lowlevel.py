@@ -70,6 +70,8 @@ def parse(data):
         pkt = Rain()
     elif data[1] == 0x56:
         pkt = Wind()
+    elif data[1] == 0x59:
+        pkt = Energy1()
     elif data[1] == 0x5A:
         pkt = Energy()
     elif data[1] == 0x5B:
@@ -1611,6 +1613,68 @@ class Wind(SensorPacket):
             # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+
+
+###############################################################################
+# Energy1 class
+###############################################################################
+
+
+class Energy1(SensorPacket):
+    """
+    Data class for the Energy "ELEC1" packet type
+    """
+
+    TYPES = {0x01: 'ELEC1'}
+
+    def __str__(self):
+        return ("Energy1 [subtype={0}, seqnbr={1}, id={2}, count={3}, " +
+                "current_amps1={4}, current_amps2={5}, current_amps3={6}, " +
+                "battery={7}, rssi={8}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.count, self.currentamps1, self.currentamps2,
+                    self.currentamps3, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy1, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.count = None
+        self.currentamps1 = None
+        self.currentamps2 = None
+        self.currentamps3 = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.count = data[6]
+        self.currentamps1 = float((data[7] << 8) + data[8]) / 10
+        self.currentamps2 = float((data[9] << 8) + data[10]) / 10
+        self.currentamps3 = float((data[11] << 8) + data[12]) / 10
+        self.rssi_byte = data[13]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
 
 ###############################################################################
 # Energy class
