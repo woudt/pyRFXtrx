@@ -1,6 +1,27 @@
 from unittest import TestCase
 
 import RFXtrx
+
+class Elec1TestCase(TestCase):
+
+    def setUp(self):
+        self.data = bytearray(b'\x0D\x59\x01\xA7\x56\x00\x0A'
+                              b'\x00\x07\x00\x00\x0B\x07\x69')
+        self.parser = RFXtrx.lowlevel.Energy1()
+
+    def test_parse_bytes(self):
+
+        energy = RFXtrx.lowlevel.parse(self.data)
+        print(energy)
+        self.assertEquals(energy.type_string,"ELEC1")
+        self.assertEquals(energy.seqnbr,167)
+        self.assertEquals(energy.id_string,"56:00")
+        self.assertEquals(energy.count,10)
+        self.assertEquals(energy.currentamps1,0.7)
+        self.assertEquals(energy.currentamps2,0)
+        self.assertEquals(energy.currentamps3,282.3)
+        self.assertEquals(energy.rssi,6)
+        self.assertEquals(energy.battery,9)
         
 class Elec2TestCase(TestCase):
 
