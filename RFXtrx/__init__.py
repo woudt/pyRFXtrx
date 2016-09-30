@@ -456,10 +456,13 @@ class _dummySerial(object):
 
     def read(self, data=None):
         """ Dummy function for reading"""
-        if data is not None or self._read_num >= len(self._data):
+        if data is not None:
             return []
         res = self._data[self._read_num]
         self._read_num = self._read_num + 1
+        if self._read_num >= len(self._data):
+            self._read_num = 0
+            sleep(1)
         return res
 
     def close(self):
