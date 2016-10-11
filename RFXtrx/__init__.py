@@ -303,6 +303,7 @@ class SensorEvent(RFXtrxEvent):
         super(SensorEvent, self).__init__(device)
 
         self.values = {}
+        self.pkt = pkt
         if isinstance(pkt, lowlevel.RfxMeter):
             self.values['Counter value'] = pkt.value
         if isinstance(pkt, lowlevel.Temp) \
