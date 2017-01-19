@@ -12,7 +12,7 @@ matrix:
     env: TOXENV=lint
 cache:
   directories:
-  - $HOME/.cache/pip
+  - "$HOME/.cache/pip"
 install: pip install -U tox coveralls
 language: python
 script: tox
@@ -21,7 +21,7 @@ deploy:
   provider: pypi
   user: dahoiv
   password:
-    secure: CtRnbeRbNRKGCw/vFSXN0EFrVmUV03gc1CxT46oLyBb8n4J8WI7tllhnsjfoJE3BUnMjXrPMnfKRk5jhvh3shPG24OhbijKZ72JCUMGwKaNWCUsGvXzs99ZNT88ZwCiBdeeqUKqZFblNQ0mn6sKL/sndgoFeLTmkuxESsQaEH0w=
+    secure: DQvNzatG4iBuvoKmc+eTL3mJnd+DHa/qJa24w8jVjppDY9A69G/bUsHuQvvMrbWSBTlXykMRqr3jIM9Vch/GK4o4DmMwfvxXfTSU8M9WJzRJ+AI3m05MO/tq3BUyiNp3zNyXJUq2QEVUT5utnYCFWB0CioUrFjD15cVVoyIRhQE=
   on:
     tags: true
     distributions: sdist bdist_wheel
