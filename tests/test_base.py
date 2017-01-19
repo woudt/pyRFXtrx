@@ -164,6 +164,12 @@ class CoreTestCase(TestCase):
         self.assertEquals(RFXtrx.SensorEvent, type(event))
         self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='PCR800' id='12:34'] values=[('Battery numeric', 7), ('Rain rate', 5.92), ('Rain total', 7456.5), ('Rssi numeric', 5)]")
 
+        #bbq
+        bytes_array = [0x0a, 0x4e, 0x01, 0x06, 0xfc, 0xd8, 0x00, 0x13, 0x00, 0x13, 0x79]
+        event = core.transport.parse(bytes_array)
+        self.assertEquals(RFXtrx.SensorEvent, type(event))
+        self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='BBQ1 - Maverick ET-732' id='fcd800:78'] values=[('Battery numeric', 9), ('Rssi numeric', 7), ('Temperature', 19), ('Temperature2', 19)]")
+        
         #baro
         bytes_array = [0x09, 0x53, 0x01, 0x2a, 0x96, 0x03, 0x04, 0x06, 0x00, 0x79]
         event = core.transport.parse(bytes_array)

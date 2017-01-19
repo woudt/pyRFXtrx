@@ -75,7 +75,7 @@ class RfyDevice(RFXtrxDevice):
         """ Send a 'Close' command using the given transport """
         pkt = lowlevel.Rfy()
         pkt.set_transmit(
-            0x00,
+            self.subtype,
             self.cmndseqnbr,
             self.id_combined,
             self.unitcode,
@@ -88,7 +88,7 @@ class RfyDevice(RFXtrxDevice):
         """ Send an 'Open' command using the given transport """
         pkt = lowlevel.Rfy()
         pkt.set_transmit(
-            0x00,
+            self.subtype,
             self.cmndseqnbr,
             self.id_combined,
             self.unitcode,
@@ -101,7 +101,7 @@ class RfyDevice(RFXtrxDevice):
         """ Send a 'Stop' command using the given transport """
         pkt = lowlevel.Rfy()
         pkt.set_transmit(
-            0x00,
+            self.subtype,
             self.cmndseqnbr,
             self.id_combined,
             self.unitcode,
@@ -299,16 +299,21 @@ class SensorEvent(RFXtrxEvent):
     """ Concrete class for sensor events """
 
     def __init__(self, pkt):
+        #  pylint: disable=too-many-branches, too-many-statements
         device = RFXtrxDevice(pkt)
         super(SensorEvent, self).__init__(device)
 
         self.values = {}
+        self.pkt = pkt
         if isinstance(pkt, lowlevel.RfxMeter):
             self.values['Counter value'] = pkt.value
         if isinstance(pkt, lowlevel.Temp) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
             self.values['Temperature'] = pkt.temp
+        if isinstance(pkt, lowlevel.Bbq):
+            self.values['Temperature'] = pkt.temp1
+            self.values['Temperature2'] = pkt.temp2
         if isinstance(pkt, lowlevel.Humid) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
@@ -456,13 +461,10 @@ class _dummySerial(object):
 
     def read(self, data=None):
         """ Dummy function for reading"""
-        if data is not None:
+        if data is not None or self._read_num >= len(self._data):
             return []
         res = self._data[self._read_num]
         self._read_num = self._read_num + 1
-        if self._read_num >= len(self._data):
-            self._read_num = 0
-            sleep(1)
         return res
 
     def close(self):
