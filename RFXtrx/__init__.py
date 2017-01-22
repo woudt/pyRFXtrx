@@ -69,6 +69,14 @@ class RFXtrxDevice(object):
         return "{0} type='{1}' id='{2}'".format(
             type(self), self.type_string, self.id_string)
 
+    def to_json(self):
+	res = {}
+	for (k,v) in self.__dict__.iteritems():
+		if k.startswith("_"):
+			continue
+		res[ k ] = v
+	return res
+
 
 ###############################################################################
 # LightingDevice class
@@ -214,6 +222,15 @@ class RFXtrxEvent(object):
     def __init__(self, device):
         self.device = device
 
+    def to_json(self):
+	res = {}
+	for (k,v) in self.__dict__.iteritems():
+		if k.startswith("_"):
+			continue
+		if isinstance(v, RFXtrxDevice) :
+			v = v.to_json()
+		res[ k ] = v
+	return res
 
 ###############################################################################
 # SensorEvent class
@@ -257,6 +274,7 @@ class SensorEvent(RFXtrxEvent):
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
             type(self), self.device, sorted(self.values.items()))
+
 
 
 ###############################################################################
