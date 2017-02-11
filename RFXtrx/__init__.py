@@ -407,11 +407,17 @@ class SensorEvent(RFXtrxEvent):
             self.values['Current Ch. 3'] = pkt.currentamps3
             self.values['Total usage'] = pkt.totalwatthours
             self.values['Count'] = pkt.count
+        if isinstance(pkt, lowlevel.Energy5):
+            self.values['Voltage'] = pkt.voltage
+            self.values['Current'] = pkt.currentamps
+            self.values['Energy usage'] = pkt.currentwatt
+            self.values['Total usage'] = pkt.totalwatthours
         if isinstance(pkt, lowlevel.Chime):
             self.values['Sound'] = pkt.sound
         if isinstance(pkt, lowlevel.Security1):
             self.values['Sensor Status'] = pkt.security1_status_string
-        if not isinstance(pkt, lowlevel.RfxMeter):
+        if not (isinstance(pkt, lowlevel.RfxMeter)
+                or isinstance(pkt, lowlevel.Energy5)):
             self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
