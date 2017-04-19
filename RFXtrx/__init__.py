@@ -361,12 +361,14 @@ class SensorEvent(RFXtrxEvent):
         self.pkt = pkt
         if isinstance(pkt, lowlevel.RfxMeter):
             self.values['Counter value'] = pkt.value
-        if isinstance(pkt, (lowlevel.Temp, lowlevel.TempHumid, lowlevel.TempHumidBaro)):
+        if isinstance(pkt, (lowlevel.Temp, lowlevel.TempHumid,
+                            lowlevel.TempHumidBaro)):
             self.values['Temperature'] = pkt.temp
         if isinstance(pkt, lowlevel.Bbq):
             self.values['Temperature'] = pkt.temp1
             self.values['Temperature2'] = pkt.temp2
-        if isinstance(pkt, (lowlevel.Humid, lowlevel.TempHumid, lowlevel.TempHumidBaro)):
+        if isinstance(pkt, (lowlevel.Humid, lowlevel.TempHumid,
+                            lowlevel.TempHumidBaro)):
             self.values['Humidity'] = pkt.humidity
             self.values['Humidity status'] = pkt.humidity_status_string
             self.values['Humidity status numeric'] = pkt.humidity_status
@@ -429,8 +431,9 @@ class ControlEvent(RFXtrxEvent):
 
     def __init__(self, pkt):
         # pylint: disable=too-many-boolean-expressions
-        if isinstance(pkt, (lowlevel.Lighting1, lowlevel.Lighting2, lowlevel.Lighting3,
-                            lowlevel.Lighting4, lowlevel.Lighting5, lowlevel.Lighting6):
+        if isinstance(pkt, (lowlevel.Lighting1, lowlevel.Lighting2,
+                            lowlevel.Lighting3, lowlevel.Lighting4,
+                            lowlevel.Lighting5, lowlevel.Lighting6)):
             device = LightingDevice(pkt)
         elif isinstance(pkt, lowlevel.RollerTrol):
             device = RollerTrolDevice(pkt)
@@ -583,7 +586,7 @@ class PySerialTransport(RFXtrxTransport):
                 data = self.serial.read()
             except TypeError:
                 continue
-            if not data) or == '\x00':
+            if not data or == '\x00':
                 continue
             pkt = bytearray(data)
             data = self.serial.read(pkt[0])
