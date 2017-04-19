@@ -361,21 +361,18 @@ class SensorEvent(RFXtrxEvent):
         self.pkt = pkt
         if isinstance(pkt, lowlevel.RfxMeter):
             self.values['Counter value'] = pkt.value
-        if isinstance(pkt, lowlevel.Temp) \
-                or isinstance(pkt, lowlevel.TempHumid) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, (lowlevel.Temp, lowlevel.TempHumid,
+                            lowlevel.TempHumidBaro)):
             self.values['Temperature'] = pkt.temp
         if isinstance(pkt, lowlevel.Bbq):
             self.values['Temperature'] = pkt.temp1
             self.values['Temperature2'] = pkt.temp2
-        if isinstance(pkt, lowlevel.Humid) \
-                or isinstance(pkt, lowlevel.TempHumid) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, (lowlevel.Humid, lowlevel.TempHumid,
+                            lowlevel.TempHumidBaro)):
             self.values['Humidity'] = pkt.humidity
             self.values['Humidity status'] = pkt.humidity_status_string
             self.values['Humidity status numeric'] = pkt.humidity_status
-        if isinstance(pkt, lowlevel.Baro) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
+        if isinstance(pkt, (lowlevel.Baro, lowlevel.TempHumidBaro)):
             self.values['Barometer'] = pkt.baro
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
@@ -416,8 +413,7 @@ class SensorEvent(RFXtrxEvent):
             self.values['Sound'] = pkt.sound
         if isinstance(pkt, lowlevel.Security1):
             self.values['Sensor Status'] = pkt.security1_status_string
-        if not (isinstance(pkt, lowlevel.RfxMeter)
-                or isinstance(pkt, lowlevel.Energy5)):
+        if not isinstance(pkt, (lowlevel.Energy5, lowlevel.RfxMeter)):
             self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 
@@ -435,12 +431,9 @@ class ControlEvent(RFXtrxEvent):
 
     def __init__(self, pkt):
         # pylint: disable=too-many-boolean-expressions
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3) \
-                or isinstance(pkt, lowlevel.Lighting4) \
-                or isinstance(pkt, lowlevel.Lighting5) \
-                or isinstance(pkt, lowlevel.Lighting6):
+        if isinstance(pkt, (lowlevel.Lighting1, lowlevel.Lighting2,
+                            lowlevel.Lighting3, lowlevel.Lighting4,
+                            lowlevel.Lighting5, lowlevel.Lighting6)):
             device = LightingDevice(pkt)
         elif isinstance(pkt, lowlevel.RollerTrol):
             device = RollerTrolDevice(pkt)
@@ -480,10 +473,6 @@ class ControlEvent(RFXtrxEvent):
 
 class StatusEvent(RFXtrxEvent):
     """ Concrete class for status """
-
-    def __init__(self, pkt):
-        super(StatusEvent, self).__init__(pkt)
-
     def __str__(self):
         return "{0} device=[{1}]".format(
             type(self), self.device)
@@ -597,22 +586,20 @@ class PySerialTransport(RFXtrxTransport):
                 data = self.serial.read()
             except TypeError:
                 continue
-            if len(data) > 0:
-                if data == '\x00':
-                    continue
-                pkt = bytearray(data)
-                data = self.serial.read(pkt[0])
-                pkt.extend(bytearray(data))
-                if self.debug:
-                    print("Recv: " + " ".join("0x{0:02x}".format(x)
-                                              for x in pkt))
-                return self.parse(pkt)
+            if not data or data == '\x00':
+                continue
+            pkt = bytearray(data)
+            data = self.serial.read(pkt[0])
+            pkt.extend(bytearray(data))
+            if self.debug:
+                print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+            return self.parse(pkt)
 
     def send(self, data):
         """ Send the given packet """
         if isinstance(data, bytearray):
             pkt = data
-        elif isinstance(data, str) or isinstance(data, bytes):
+        elif isinstance(data, (bytes, str)):
             pkt = bytearray(data)
         else:
             raise ValueError("Invalid type")

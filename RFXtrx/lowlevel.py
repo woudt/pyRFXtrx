@@ -1051,10 +1051,6 @@ class SensorPacket(Packet):
     Mapping of forecast types to string
     """
 
-    def __init__(self):
-        """Constructor"""
-        super(SensorPacket, self).__init__()
-
 
 ###############################################################################
 # Temp class
