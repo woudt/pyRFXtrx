@@ -586,7 +586,7 @@ class PySerialTransport(RFXtrxTransport):
                 data = self.serial.read()
             except TypeError:
                 continue
-            if not data or == '\x00':
+            if not data or data == '\x00':
                 continue
             pkt = bytearray(data)
             data = self.serial.read(pkt[0])
