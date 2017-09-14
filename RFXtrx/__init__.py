@@ -500,17 +500,25 @@ class _dummySerial(object):
     def __init__(self, *args, **kwargs):
         self._read_num = 0
         self._data = {}
-        self._data[0] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
+        self._data[0] = [0x0D, 0x01, 0x00, 0x01, 0x02, 0x53, 0x45,  # status
+                         0x10,  # msg3: rsl
+                         0x0C,  # msg4: hideki lacrosse
+                         0x2F,  # msg5: x10 arc ac homeeasy oregon
+                         0x01,  # msg6: keeloq
+                         0x01, 0x00, 0x00]
+        self._data[1] = [0x00, 0x00, 0x00, 0x00, 0x00,  # response to start
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        self._data[2] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
                          0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
-        self._data[1] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
-                         0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
-        self._data[2] = [0x0a, 0x51, 0x01, 0x00, 0x00,
-                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
         self._data[3] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
                          0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
         self._data[4] = [0x0a, 0x51, 0x01, 0x00, 0x00,
                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
-        self._data[5] = [0x0a, 0x20, 0x00, 0x00, 0x00,
+        self._data[5] = [0x0b, 0x15, 0x00, 0x2a, 0x12,
+                         0x34, 0x41, 0x05, 0x03, 0x01, 0x00, 0x70]  # light
+        self._data[6] = [0x0a, 0x51, 0x01, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
+        self._data[7] = [0x0a, 0x20, 0x00, 0x00, 0x00,
                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor2
 
     def write(self, *args, **kwargs):
@@ -616,7 +624,8 @@ class PySerialTransport(RFXtrxTransport):
             data = self.serial.read(pkt[0])
             pkt.extend(bytearray(data))
             if self.debug:
-                print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+                print("RFXTRX: Recv: " +
+                      " ".join("0x{0:02x}".format(x) for x in pkt))
             return self.parse(pkt)
 
     def send(self, data):
@@ -628,7 +637,8 @@ class PySerialTransport(RFXtrxTransport):
         else:
             raise ValueError("Invalid type")
         if self.debug:
-            print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+            print("RFXTRX: Send: " +
+                  " ".join("0x{0:02x}".format(x) for x in pkt))
         self.serial.write(pkt)
 
     def reset(self):
@@ -636,8 +646,6 @@ class PySerialTransport(RFXtrxTransport):
         self.send(b'\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         sleep(0.3)  # Should work with 0.05, but not for me
         self.serial.flushInput()
-        self.send(b'\x0D\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        return self.receive_blocking()
 
     def close(self):
         """ close connection to rfxtrx device """
@@ -658,7 +666,8 @@ class DummyTransport(RFXtrxTransport):
             return None
         pkt = bytearray(data)
         if self.debug:
-            print("Recv: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+            print("RFXTRX: Recv: " +
+                  " ".join("0x{0:02x}".format(x) for x in pkt))
         return self.parse(pkt)
 
     def receive_blocking(self, data=None):
@@ -670,7 +679,8 @@ class DummyTransport(RFXtrxTransport):
             requested) """
         pkt = bytearray(data)
         if self.debug:
-            print("Send: " + " ".join("0x{0:02x}".format(x) for x in pkt))
+            print("RFXTRX: Send: " +
+                  " ".join("0x{0:02x}".format(x) for x in pkt))
 
 
 class DummyTransport2(PySerialTransport):
@@ -687,12 +697,16 @@ class Connect(object):
     """ The main class for rfxcom-py.
     Has methods for sensors.
     """
-    #  pylint: disable=too-many-instance-attributes
+    #  pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(self, device, event_callback=None, debug=False,
-                 transport_protocol=PySerialTransport):
+                 transport_protocol=PySerialTransport,
+                 modes=None):
         self._run_event = threading.Event()
         self._run_event.set()
         self._sensors = {}
+        self._status = None
+        self._modes = modes
+        self._debug = debug
         self.event_callback = event_callback
 
         self.transport = transport_protocol(device, debug)
@@ -703,6 +717,17 @@ class Connect(object):
     def _connect(self):
         """Connect """
         self.transport.reset()
+        self._status = self.send_get_status()
+
+        if self._modes is not None:
+            self.set_recmodes(self._modes)
+            self._status = self.send_get_status()
+
+        if self._debug:
+            print("RFXTRX: ", self._status.device)
+
+        self.send_start()
+
         while self._run_event.is_set():
             event = self.transport.receive_blocking()
             if isinstance(event, RFXtrxEvent):
@@ -722,6 +747,39 @@ class Connect(object):
         self._run_event.clear()
         self.transport.close()
         self._thread.join()
+
+    def set_recmodes(self, modenames):
+        """ Sets the device modes (which protocols to decode) """
+        data = bytearray([0x0D, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00,
+                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+        # Keep the values read during init.
+        data[5] = self._status.device.tranceiver_type
+        data[6] = self._status.device.output_power
+
+        # Build the mode data bytes from the mode names
+        for mode in modenames:
+            byteno, bitno = lowlevel.get_recmode_tuple(mode)
+            if byteno is None:
+                raise ValueError('Unknown mode name '+mode)
+
+            data[7 + byteno] |= 1 << bitno
+
+        self.transport.send(data)
+        self._modes = modenames
+        return self.transport.receive_blocking()
+
+    def send_start(self):
+        """ Sends the Start RFXtrx transceiver command """
+        self.transport.send(b'\x0D\x00\x00\x03\x07\x00\x00'
+                            b'\x00\x00\x00\x00\x00\x00\x00')
+        return self.transport.receive_blocking()
+
+    def send_get_status(self):
+        """ Sends the Get Status command """
+        self.transport.send(b'\x0D\x00\x00\x01\x02\x00\x00'
+                            b'\x00\x00\x00\x00\x00\x00\x00')
+        return self.transport.receive_blocking()
 
 
 class Core(Connect):

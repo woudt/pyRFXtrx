@@ -285,7 +285,7 @@ class CoreTestCase(TestCase):
         light2 = RFXtrx.lowlevel.parse(data2)
 
         data3 = bytearray(b'\x0A\x52\x02\x11\x70\x02\x00\xA7'
-                         b'\x2D\x00\x89')
+                          b'\x2D\x00\x89')
         temphum = RFXtrx.lowlevel.parse(data3)
 
         self.assertTrue(light==light2)
@@ -345,6 +345,12 @@ class CoreTestCase(TestCase):
         device = RFXtrx.get_device(event.device.packettype, event.device.subtype, event.device.id_string)
         self.assertTrue(device==event.device)
 
+        # Lighting4
+        bytes_array = [0x09, 0x13, 0x00, 0x2a, 0x12, 0x34, 0x56, 0x01, 0x5e, 0x70]
+        event = core.transport.parse(bytes_array)
+        device = RFXtrx.get_device(event.device.packettype, event.device.subtype, event.device.id_string)
+        self.assertTrue(device==event.device)
+
         # Lighting5
         bytes_array = bytearray(b'\x0A\x14\x00\xAD\xF3\x94\xAB'
                               b'\x01\x01\x00\x60')
@@ -365,6 +371,27 @@ class CoreTestCase(TestCase):
         self.assertRaises(ValueError, RFXtrx.get_device,event.device.packettype, event.device.subtype, event.device.id_string)
         core.close_connection()
 
+    def test_set_recmodes(self):
+        core = RFXtrx.Connect(self.path, event_callback=_callback, debug=False, 
+                              transport_protocol=RFXtrx.DummyTransport)
+        self.assertEquals(None, core._modes)
+
+        modes = ['ac', 'arc', 'hideki', 'homeeasy', 'keeloq', 'lacrosse', 'oregon', 'rsl', 'x10']
+        bytes_array = bytearray(b'\x0D\x01\x00\x01\x02\x53\x45'
+                          b'\x10' # msg3: rsl
+                          b'\x0C' # msg4: hideki lacrosse
+                          b'\x2F' # msg5: x10 arc ac homeeasy oregon
+                          b'\x01' # msg6: keeloq
+                          b'\x01\x00\x00' # unused
+                         )
+        core._status = core.transport.receive(bytes_array)
+        core.set_recmodes(modes)
+        self.assertEquals(modes, core._modes)
+
+        # set an unknown mode
+        with self.assertRaises(ValueError):
+          core.set_recmodes(['arc', 'oregon', 'unknown-mode'])
+
     def test_receive(self):
         core = RFXtrx.Connect(self.path, event_callback=_callback, debug=False, transport_protocol=RFXtrx.DummyTransport)
         # Lighting1
@@ -375,9 +402,14 @@ class CoreTestCase(TestCase):
         self.assertEquals(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.LightingDevice'> type='X10 lighting' id='E5'] values=[('Command', 'On'), ('Rssi numeric', 7)]")
 
         #status
-        bytes_array = bytearray(b'\x0D\x01\x00\x01\x02\x53\x45\x00\x0C'
-                                b'\x2F\x01\x01\x00\x00')
+        bytes_array = bytearray(b'\x0D\x01\x00\x01\x02\x53\x45'
+                                b'\x10' # msg3: rsl
+                                b'\x0C' # msg4: hideki lacrosse
+                                b'\x2F' # msg5: x10 arc ac homeeasy oregon
+                                b'\x01' # msg6: keeloq
+                                b'\x01\x00\x00' # unused
+                               )
         event= core.transport.receive(bytes_array)
         self.assertEquals(RFXtrx.StatusEvent, type(event))
-        self.assertEquals(event.__str__(),"<class 'RFXtrx.StatusEvent'> device=[Status [subtype=433.92MHz, firmware=69, devices=['ac', 'arc', 'hideki', 'homeeasy', 'lacrosse', 'oregon', 'x10']]]")
+        self.assertEquals(event.__str__(),"<class 'RFXtrx.StatusEvent'> device=[Status [subtype=433.92MHz, firmware=69, output_power=0, devices=['ac', 'arc', 'hideki', 'homeeasy', 'keeloq', 'lacrosse', 'oregon', 'rsl', 'x10']]]")
         core.close_connection()
