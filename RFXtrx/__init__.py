@@ -618,6 +618,7 @@ class PySerialTransport(RFXtrxTransport):
                     self.connect()
                 except serial.serialutil.SerialException:
                     time.sleep(5)
+                    continue
             if not data or data == '\x00':
                 continue
             pkt = bytearray(data)
