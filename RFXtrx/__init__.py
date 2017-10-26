@@ -599,11 +599,8 @@ class PySerialTransport(RFXtrxTransport):
             self.serial = serial.Serial(self.port, 38400, timeout=0.1)
         except serial.serialutil.SerialException:
             import glob
-            try:
-                port = glob.glob('/dev/serial/by-id/usb-RFXCOM_*-port0')[0]
-                self.serial = serial.Serial(port, 38400, timeout=0.1)
-            except:
-                raise serial.serialutil.SerialException()
+            port = glob.glob('/dev/serial/by-id/usb-RFXCOM_*-port0')[0]
+            self.serial = serial.Serial(port, 38400, timeout=0.1)
 
     def receive_blocking(self):
         """ Wait until a packet is received and return with an RFXtrxEvent """
