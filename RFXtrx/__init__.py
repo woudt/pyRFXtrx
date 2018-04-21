@@ -20,7 +20,7 @@
 """
 This module provides the base implementation for pyRFXtrx
 """
-# pylint: disable=R0903
+# pylint: disable=R0903, invalid-name
 from __future__ import print_function
 
 from time import sleep
@@ -32,7 +32,6 @@ from . import lowlevel
 ###############################################################################
 # RFXtrxDevice class
 ###############################################################################
-
 
 class RFXtrxDevice(object):
     """ Superclass for all devices """
@@ -263,6 +262,7 @@ class LightingDevice(RFXtrxDevice):
         """ Send a 'Dim' command with the given level using the given
             transport
         """
+        #  pylint: disable=too-many-branches
         if level < 0 or level > 100:
             raise ValueError("Dim level must be between 0 and 100")
 
@@ -574,6 +574,7 @@ class RFXtrxTransport(object):
             # Store the latest RF signal data
             obj.data = data
             return obj
+        return None
 
     def reset(self):
         """ reset the rfxtrx device """
