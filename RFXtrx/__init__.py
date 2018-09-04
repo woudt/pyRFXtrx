@@ -33,7 +33,7 @@ from . import lowlevel
 # RFXtrxDevice class
 ###############################################################################
 
-class RFXtrxDevice(object):
+class RFXtrxDevice:
     """ Superclass for all devices """
 
     def __init__(self, pkt):
@@ -316,43 +316,43 @@ def get_device(packettype, subtype, id_string):
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x11:  # Lighting2
+    if packettype == 0x11:  # Lighting2
         pkt = lowlevel.Lighting2()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x12:  # Lighting3
+    if packettype == 0x12:  # Lighting3
         pkt = lowlevel.Lighting3()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x13:  # Lighting4
+    if packettype == 0x13:  # Lighting4
         pkt = lowlevel.Lighting4()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x14:  # Lighting5
+    if packettype == 0x14:  # Lighting5
         pkt = lowlevel.Lighting5()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x15:  # Lighting6
+    if packettype == 0x15:  # Lighting6
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
-    elif packettype == 0x19:  # RollerTrol
+    if packettype == 0x19:  # RollerTrol
         pkt = lowlevel.RollerTrol()
         pkt.parse_id(subtype, id_string)
         return RollerTrolDevice(pkt)
-    elif packettype == 0x1A:  # Rfy
+    if packettype == 0x1A:  # Rfy
         pkt = lowlevel.Rfy()
         pkt.parse_id(subtype, id_string)
         return RfyDevice(pkt)
-    else:
-        raise ValueError("Unsupported packettype")
+
+    raise ValueError("Unsupported packettype")
 
 
 ###############################################################################
 # RFXtrxEvent class
 ###############################################################################
 
-class RFXtrxEvent(object):
+class RFXtrxEvent:
     """ Abstract superclass for all events """
 
     def __init__(self, device):
@@ -500,7 +500,7 @@ class StatusEvent(RFXtrxEvent):
 ###############################################################################
 
 
-class _dummySerial(object):
+class _dummySerial:
     """ Dummy class for testing"""
     # pylint: disable=unused-argument
     def __init__(self, *args, **kwargs):
@@ -553,7 +553,7 @@ class _dummySerial(object):
 # RFXtrxTransport class
 ###############################################################################
 
-class RFXtrxTransport(object):
+class RFXtrxTransport:
     """ Abstract superclass for all transport mechanisms """
 
     # pylint: disable=attribute-defined-outside-init
@@ -699,7 +699,7 @@ class DummyTransport2(PySerialTransport):
         self._run_event.set()
 
 
-class Connect(object):
+class Connect:
     """ The main class for rfxcom-py.
     Has methods for sensors.
     """
