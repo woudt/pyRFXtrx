@@ -159,9 +159,8 @@ class RfyDevice(RFXtrxDevice):
         self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
         transport.send(pkt.data)
 
-
     def send_on(self, transport):
-        """ Send an 'Enable Sun Automation' command using the given transport """
+        """ Send an 'Enable Sun Automation' command """
         pkt = lowlevel.Rfy()
         pkt.set_transmit(
             self.subtype,
@@ -174,7 +173,7 @@ class RfyDevice(RFXtrxDevice):
         transport.send(pkt.data)
 
     def send_off(self, transport):
-        """ Send an 'Disable Sun Automation' command using the given transport """
+        """ Send an 'Disable Sun Automation' command """
         pkt = lowlevel.Rfy()
         pkt.set_transmit(
             self.subtype,
@@ -185,6 +184,7 @@ class RfyDevice(RFXtrxDevice):
         )
         self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
         transport.send(pkt.data)
+
 
 class LightingDevice(RFXtrxDevice):
     """ Concrete class for a control device """
