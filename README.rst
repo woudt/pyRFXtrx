@@ -1,5 +1,5 @@
 ==========
- pyRFXtrx  |Build Status| |Coverage Status| |pypi|
+ pyRFXtrx  |Build Status| |Coverage Status|
 ==========
 
 A Python library to communicate with the RFXtrx family of devices
@@ -39,6 +39,5 @@ If not, see <http://www.gnu.org/licenses/>.
    :target: https://travis-ci.org/Danielhiversen/pyRFXtrx
 .. |Coverage Status| image:: https://img.shields.io/coveralls/Danielhiversen/pyRFXtrx.svg
    :target: https://coveralls.io/r/Danielhiversen/pyRFXtrx?branch=master
-.. |pypi| image:: https://img.shields.io/pypi/dm/pyRFXtrx.svg?style=flat
-   :target: https://pypi.python.org/pypi/pyRFXtrx
+
 
