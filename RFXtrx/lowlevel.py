@@ -1,6 +1,6 @@
 # This file is part of pyRFXtrx, a Python library to communicate with
 # the RFXtrx family of devices from http://www.rfxcom.com/
-# See https://github.com/woudt/pyRFXtrx for the latest version.
+# See https://github.com/Danielhiversen/pyRFXtrx for the latest version.
 #
 # Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
 #
@@ -22,68 +22,84 @@ This module provides low level packet parsing and generation code for the
 RFXtrx.
 """
 # pylint: disable=C0302,R0902,R0903,R0911,R0913
+# pylint: disable= too-many-lines, too-many-statements
 
 
 def parse(data):
+    # pylint: disable=too-many-branches
     """ Parse a packet from a bytearray """
-    if data[0] == 0:
+    if data[0] == 0 or len(data) < 2:
         # null length packet - sometimes happens on initialization
         return None
+
+    expected_length = data[0] + 1
+    if len(data) != expected_length:
+        return None
+
     if data[1] == 0x01:
         pkt = Status()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x10:
+    elif data[1] == 0x10:
         pkt = Lighting1()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x11:
+    elif data[1] == 0x11:
         pkt = Lighting2()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x12:
+    elif data[1] == 0x12:
         pkt = Lighting3()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x13:
+    elif data[1] == 0x13:
         pkt = Lighting4()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x14:
+    elif data[1] == 0x14:
         pkt = Lighting5()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x15:
+    elif data[1] == 0x15:
         pkt = Lighting6()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x50:
+    elif data[1] == 0x16:
+        pkt = Chime()
+    elif data[1] == 0x19:
+        pkt = RollerTrol()
+    elif data[1] == 0x1A:
+        pkt = Rfy()
+    elif data[1] == 0x20:
+        pkt = Security1()
+    elif data[1] == 0x50:
         pkt = Temp()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x52:
+    elif data[1] == 0x4E:
+        pkt = Bbq()
+    elif data[1] == 0x4F:
+        pkt = TempRain()
+    elif data[1] == 0x51:
+        pkt = Humid()
+    elif data[1] == 0x52:
         pkt = TempHumid()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x54:
+    elif data[1] == 0x53:
+        pkt = Baro()
+    elif data[1] == 0x54:
         pkt = TempHumidBaro()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x55:
-        pkt = RainGauge()
-        pkt.load_receive(data)
-        return pkt
-    if data[1] == 0x56:
+    elif data[1] == 0x55:
+        pkt = Rain()
+    elif data[1] == 0x56:
         pkt = Wind()
-        pkt.load_receive(data)
-        return pkt
+    elif data[1] == 0x57:
+        pkt = UV()
+    elif data[1] == 0x59:
+        pkt = Energy1()
+    elif data[1] == 0x5A:
+        pkt = Energy()
+    elif data[1] == 0x5B:
+        pkt = Energy4()
+    elif data[1] == 0x5C:
+        pkt = Energy5()
+    elif data[1] == 0x71:
+        pkt = RfxMeter()
+    else:
+        return None
+
+    pkt.load_receive(data)
+    return pkt
 
 
 ###############################################################################
 # Packet class
 ###############################################################################
 
-class Packet(object):
+class Packet():
     """ Abstract superclass for all low level packets """
 
     _UNKNOWN_TYPE = "Unknown type ({0:#04x}/{1:#04x})"
@@ -101,19 +117,41 @@ class Packet(object):
         self.type_string = None
         self.id_string = None
 
+    def has_value(self, datatype):
+        """Return True if the sensor supports the given data type.
+        sensor.has_value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.has_temperature().
+        """
+        return hasattr(self, datatype)
+
+    def value(self, datatype):
+        """Return the :class:`SensorValue` for the given data type.
+        sensor.value(RFXCOM_TEMPERATURE) is identical to calling
+        sensor.temperature().
+        """
+        return getattr(self, datatype, None)
+
+    def __getattr__(self, name):
+        typename = name.replace("has_", "", 1)
+        if not name == typename:
+            return lambda: self.has_value(typename)
+        raise AttributeError(name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Packet):
+            return False
+        return self.id_string == other.id_string
+
+    def __str__(self):
+        return self.id_string
+
+    def __repr__(self):
+        return self.__str__()
+
 
 ###############################################################################
 # Status class
 ###############################################################################
-
-def _decode_flags(v, words):
-    words = words.split()
-    s = set()
-    for w in words:
-        if v % 2:
-            s.add(w)
-        v//= 2
-    return s
 
 class Status(Packet):
     """
@@ -130,22 +168,77 @@ class Status(Packet):
         0x58: '868.30MHz FSK',
         0x59: '868.35MHz',
         0x5A: '868.35MHz FSK',
-        0x5B: '868.95MHz'
+        0x5B: '868.95MHz',
+        0x5C: '868.30MHz FSK PKT',
+        0x5D: '868.35MHz FSK PKT',
+        0x5E: '868.40MHz FSK PKT'
     }
+
+    """
+    Receiving modes names. DO NOT alter their order.
+    """
+    RECMODES = [
+        [
+            "aeblyss",
+            "rubicson",
+            "fineoffset",
+            "lighting4",
+            "rsl",
+            "byronsx",
+            "imagintronix",
+            "undecoded"
+        ],
+        [
+            "mertik",
+            "adlightwave",
+            "hideki",
+            "lacrosse",
+            "fs20",
+            "proguard",
+            "blindst0",
+            "blindst1234"
+        ],
+        [
+            "x10",
+            "arc",
+            "ac",
+            "homeeasy",
+            "meiantech",
+            "oregon",
+            "ati",
+            "visonic"
+        ],
+        [
+            "keeloq",
+            "homeconfort"
+        ]
+    ]
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("Status [subtype={0}, firmware={1}, devices={2}]") \
-            .format(self.type_string, self.firmware_version, self.devices)
+        return ("Status [subtype={0}, firmware={1}, output_power={2}, "
+                "devices={3}]").format(self.type_string,
+                                       self.firmware_version,
+                                       self.output_power,
+                                       self.devices)
 
     def __init__(self):
         """Constructor"""
         super(Status, self).__init__()
         self.tranceiver_type = None
         self.firmware_version = None
+        self.output_power = None
         self.devices = None
+
+    def _decode_recmodes(self, data, index):
+        res = set()
+
+        for i in range(0, len(self.RECMODES[index])):
+            if (data & (1 << i)) != 0:
+                res.add(self.RECMODES[index][i])
+        return res
 
     def load_receive(self, data):
         """Load data from a bytearray"""
@@ -155,14 +248,13 @@ class Status(Packet):
 
         self.tranceiver_type = data[5]
         self.firmware_version = data[6]
+        self.output_power = data[13]
 
         devs = set()
-        devs.update(_decode_flags(data[7] / 0x80,
-            'undecoded'))
-        devs.update(_decode_flags(data[8],
-            'mertik lightwarerf hideki lacrosse fs20 proguard'))
-        devs.update(_decode_flags(data[9],
-            'x10 arc ac homeeasy ikeakoppla oregon ati visonic'))
+        devs.update(self._decode_recmodes(data[7], 0))
+        devs.update(self._decode_recmodes(data[8], 1))
+        devs.update(self._decode_recmodes(data[9], 2))
+        devs.update(self._decode_recmodes(data[10], 3))
         self.devices = sorted(devs)
 
         self._set_strings()
@@ -172,8 +264,20 @@ class Status(Packet):
         if self.tranceiver_type in self.TYPES:
             self.type_string = self.TYPES[self.tranceiver_type]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = 'Unknown'
+
+
+def get_recmode_tuple(mode_name):
+    """
+    Look for a receiving mode in the RECMODES lists from a name.
+    Return a tuple (listno, sublistno), or (None, None) if
+    not found.
+    """
+    for i in range(0, len(Status.RECMODES)):
+        if mode_name in Status.RECMODES[i]:
+            return (i, Status.RECMODES[i].index(mode_name))
+    return (None, None)
 
 
 ###############################################################################
@@ -194,7 +298,9 @@ class Lighting1(Packet):
              0x06: 'RisingSun',
              0x07: 'Philips SBC',
              0x08: 'Energenie',
-             }
+             0x09: 'Energenie5',
+             0x0A: 'GDR2',
+             0x0B: 'HQ'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -206,8 +312,7 @@ class Lighting1(Packet):
                    'Proove': 0x01,
                    'DomiaLite': 0x01,
                    'InterTechno': 0x01,
-                   'AB600': 0x01,
-                   }
+                   'AB600': 0x01}
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
@@ -257,7 +362,7 @@ class Lighting1(Packet):
                     self.housecode = hcode_num
             self.unitcode = int(id_string[1:])
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -298,7 +403,7 @@ class Lighting1(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -320,7 +425,7 @@ class Lighting2(Packet):
     TYPES = {0x00: 'AC',
              0x01: 'HomeEasy EU',
              0x02: 'ANSLUT',
-             }
+             0x03: 'Kambrook'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -328,8 +433,7 @@ class Lighting2(Packet):
     ALIAS_TYPES = {'KlikAanKlikUit automatic': 0x00,
                    'NEXA automatic': 0x00,
                    'CHACON autometic': 0x00,
-                   'HomeEasy UK': 0x00,
-                   }
+                   'HomeEasy UK': 0x00}
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
@@ -339,8 +443,7 @@ class Lighting2(Packet):
                 0x02: 'Set level',
                 0x03: 'Group off',
                 0x04: 'Group on',
-                0x05: 'Set group level',
-                }
+                0x05: 'Set group level'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
@@ -350,6 +453,9 @@ class Lighting2(Packet):
                 "level={4}, rssi={5}]") \
             .format(self.type_string, self.seqnbr, self.id_string,
                     self.cmnd_string, self.level, self.rssi)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __init__(self):
         """Constructor"""
@@ -376,7 +482,7 @@ class Lighting2(Packet):
             self.id4 = self.id_combined & 0xff
             self.unitcode = int(id_string[8:])
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -430,7 +536,7 @@ class Lighting2(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -449,8 +555,7 @@ class Lighting3(Packet):
     Data class for the Lighting3 packet type
     """
 
-    TYPES = {0x00: 'Ikea Koppla',
-             }
+    TYPES = {0x00: 'Ikea Koppla'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -468,8 +573,7 @@ class Lighting3(Packet):
                 0x18: 'Level 8',
                 0x19: 'Level 9',
                 0x1a: 'Off',
-                0x1c: 'Program',
-                }
+                0x1c: 'Program'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
@@ -501,7 +605,7 @@ class Lighting3(Packet):
             self.channel1 = self.channel & 0xff
             self.channel2 = self.channel >> 8
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -549,7 +653,7 @@ class Lighting3(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -568,10 +672,21 @@ class Lighting4(Packet):
     Data class for the Lighting4 packet type
     """
 
-    TYPES = {0x00: 'PT2262',
-             }
+    TYPES = {0x00: 'PT2262'}
     """
     Mapping of numeric subtype values to strings, used in type_string
+    """
+    COMMANDS = {0x00: 'Off',
+                0x01: 'On',
+                0x02: 'Off',
+                0x03: 'On',
+                0x04: 'Off',
+                0x05: 'On',
+                0x07: 'On',
+                0x09: 'On',
+                0x0c: 'On'}
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
@@ -590,6 +705,7 @@ class Lighting4(Packet):
         self.pulsehigh = None
         self.pulselow = None
         self.pulse = None
+        self.cmnd_string = ""
 
     def parse_id(self, subtype, id_string):
         """Parse a string id into individual components"""
@@ -601,7 +717,7 @@ class Lighting4(Packet):
             self.cmd2 = (self.cmd >> 8) & 0xff
             self.cmd3 = self.cmd & 0xff
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -651,9 +767,14 @@ class Lighting4(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        if self.cmd is not None:
+            if self.cmd2 in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmd2]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmd)
 
 
 ###############################################################################
@@ -670,7 +791,19 @@ class Lighting5(Packet):
              0x02: 'BBSB new types',
              0x03: 'MDREMOTE LED dimmer',
              0x04: 'Conrad RSL2',
-             }
+             0x05: 'Livolo',
+             0x06: 'TRC02',
+             0x07: 'Aoke',
+             0x08: 'TRC02_2',
+             0x09: 'Eurodomest',
+             0x0A: 'Livolo appliance',
+             0x0B: 'RGB432W',
+             0x0C: 'MDREMOTE 107',
+             0x0D: 'Legrand CAD',
+             0x0E: 'Avantek',
+             0x0F: 'ProMax/IT',
+             0x10: 'MDREMOTE 108',
+             0x11: 'Kangtai'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -679,7 +812,8 @@ class Lighting5(Packet):
                    'Siemens': 0x00,
                    'EMW100 GAO': 0x01,
                    'Everflourish': 0x01,
-                   }
+                   'ProMax': 0x0f,
+                   'IT': 0x0f}
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
@@ -698,25 +832,22 @@ class Lighting5(Packet):
                    0x0d: 'Close (inline relay)',
                    0x0e: 'Stop (inline relay)',
                    0x0f: 'Open (inline relay)',
-                   0x10: 'Set level',
-                   }
+                   0x10: 'Set level'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     COMMANDS_01 = {0x00: 'Off',
                    0x01: 'On',
-                   0x02: 'Learn',
-                   }
+                   0x02: 'Learn'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
-    COMMANDS_02_04 = {0x00: 'Off',
-                      0x01: 'On',
-                      0x02: 'Group off',
-                      0x03: 'Group on',
-                      }
+    COMMANDS_02_04_0F = {0x00: 'Off',
+                         0x01: 'On',
+                         0x02: 'Group off',
+                         0x03: 'Group on'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
@@ -731,15 +862,14 @@ class Lighting5(Packet):
                    0x07: 'Mode+',
                    0x08: 'Speed-',
                    0x09: 'Speed+',
-                   0x0a: 'Mode-',
-                   }
+                   0x0a: 'Mode-'}
+
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     COMMANDS_XX = {0x00: 'Off',
-                   0x01: 'On',
-                   }
+                   0x01: 'On'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
@@ -763,7 +893,7 @@ class Lighting5(Packet):
         self.cmnd_string = None
 
     def parse_id(self, subtype, id_string):
-        """Parse a string id into individual components"""
+        """( a string id into individual components"""
         try:
             self.packettype = 0x14
             self.subtype = subtype
@@ -773,7 +903,7 @@ class Lighting5(Packet):
             self.id3 = self.id_combined & 0xff
             self.unitcode = int(id_string[7:])
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -820,11 +950,12 @@ class Lighting5(Packet):
 
     def _set_strings(self):
         """Translate loaded numeric values into convenience strings"""
+        # pylint: disable=too-many-branches
         self.id_string = "{0:06x}:{1}".format(self.id_combined, self.unitcode)
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -832,29 +963,30 @@ class Lighting5(Packet):
                 self.cmnd_string = self.COMMANDS_00[self.cmnd]
             elif self.subtype == 0x01 and self.cmnd in self.COMMANDS_01:
                 self.cmnd_string = self.COMMANDS_01[self.cmnd]
-            elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02_04:
-                self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
+            elif self.subtype == 0x02 and self.cmnd in self.COMMANDS_02_04_0F:
+                self.cmnd_string = self.COMMANDS_02_04_0F[self.cmnd]
             elif self.subtype == 0x03 and self.cmnd in self.COMMANDS_03:
                 self.cmnd_string = self.COMMANDS_03[self.cmnd]
-            elif self.subtype == 0x04 and self.cmnd in self.COMMANDS_02_04:
-                self.cmnd_string = self.COMMANDS_02_04[self.cmnd]
+            elif self.subtype == 0x04 and self.cmnd in self.COMMANDS_02_04_0F:
+                self.cmnd_string = self.COMMANDS_02_04_0F[self.cmnd]
             elif self.subtype >= 0x05 and self.cmnd in self.COMMANDS_XX:
                 self.cmnd_string = self.COMMANDS_XX[self.cmnd]
+            elif self.subtype >= 0x0f and self.cmnd in self.COMMANDS_02_04_0F:
+                self.cmnd_string = self.COMMANDS_02_04_0F[self.cmnd]
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
-
 
 ###############################################################################
 # Lighting6 class
 ###############################################################################
+
 
 class Lighting6(Packet):
     """
     Data class for the Lighting6 packet type
     """
 
-    TYPES = {0x00: 'Blyss',
-             }
+    TYPES = {0x00: 'Blyss'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -862,8 +994,7 @@ class Lighting6(Packet):
     COMMANDS = {0x00: 'On',
                 0x01: 'Off',
                 0x02: 'Group on',
-                0x03: 'Group off',
-                }
+                0x03: 'Group off'}
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
@@ -899,7 +1030,7 @@ class Lighting6(Packet):
             self.groupcode = ord(id_string[5])
             self.unitcode = int(id_string[6:])
             self._set_strings()
-        except:
+        except ValueError:
             raise ValueError("Invalid id_string")
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
@@ -954,7 +1085,7 @@ class Lighting6(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.cmnd is not None:
@@ -992,10 +1123,6 @@ class SensorPacket(Packet):
     Mapping of forecast types to string
     """
 
-    def __init__(self):
-        """Constructor"""
-        super(SensorPacket, self).__init__()
-
 
 ###############################################################################
 # Temp class
@@ -1015,8 +1142,8 @@ class Temp(SensorPacket):
              0x07: 'Viking 02811',
              0x08: 'La Crosse WS2300',
              0x09: 'RUBiCSON',
-             0x0a: 'TFA 30.3133',
-             }
+             0x0A: 'TFA 30.3133',
+             0x0B: 'WT0122'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -1050,7 +1177,7 @@ class Temp(SensorPacket):
         self.templow = data[7]
         self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
-            self.temp = -self.temp
+            self.temp = -1 * self.temp
         self.rssi_byte = data[8]
         self.battery = self.rssi_byte & 0x0f
         self.rssi = self.rssi_byte >> 4
@@ -1062,7 +1189,68 @@ class Temp(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Bbq class
+###############################################################################
+
+class Bbq(SensorPacket):
+    """
+    Data class for the Temp1 packet type
+    """
+
+    TYPES = {0x01: 'BBQ1 - Maverick ET-732'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Bbq [subtype={0}, seqnbr={1}, id={2}, temp1={3}, " +
+                "temp2={4}, battery={5}, rssi={6}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.temp1, self.temp2, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Bbq, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.id3 = None
+        self.id_combined = None
+        self.temp1 = None
+        self.temp2 = None
+        self.battery = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.id3 = data[6]
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        self.temp1 = data[7]
+        self.temp2 = data[9]
+        self.rssi_byte = data[10]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:06x}:{1}".format(self.id_combined,
+                                              self.packettype)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
 
@@ -1078,7 +1266,7 @@ class Humid(SensorPacket):
 
     TYPES = {0x01: 'LaCrosse TX3',
              0x02: 'LaCrosse WS2300',
-             }
+             0x03: 'Inovalley S80'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -1122,7 +1310,7 @@ class Humid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1150,8 +1338,11 @@ class TempHumid(SensorPacket):
              0x07: 'TFA TS34C, Cresta',
              0x08: 'WT260,WT260H,WT440H,WT450,WT450H',
              0x09: 'Viking 02035,02038',
-             0x0a: 'Rubicson',
-             }
+             0x0A: 'Rubicson',
+             0x0B: 'EW109',
+             0x0C: 'Imagintronix',
+             0x0D: 'Alecto WS1700',
+             0x0E: 'Alecto'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -1189,7 +1380,7 @@ class TempHumid(SensorPacket):
         self.templow = data[7]
         self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
-            self.temp = -self.temp
+            self.temp = -1 * self.temp
         self.humidity = data[8]
         self.humidity_status = data[9]
         self.rssi_byte = data[10]
@@ -1203,7 +1394,7 @@ class TempHumid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1269,13 +1460,81 @@ class Baro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.forecast in self.FORECAST_TYPES:
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+
+###############################################################################
+# RFXMeter class
+###############################################################################
+
+class RfxMeter(SensorPacket):
+    """
+    Data class for the RFXMeter packet type
+    """
+
+    TYPES = {0x00: 'RFXMeter Count',
+             0x01: 'RFXMeter Interval',
+             0x02: 'RFXMeter Calibration',
+             0x03: 'RFXMeter Address',
+             0x04: 'RFXMeter Counter reset',
+             0x0B: 'RFXMeter Counter set',
+             0x0C: 'RFXMeter Set interval',
+             0x0D: 'RFXMeter Set calibration',
+             0x0E: 'RFXMeter Set Address',
+             0x0F: 'RFXMeter Ident'}
+
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("RFXMeter [subtype={0}, seqnbr={1}, id={2}, value3={3}, " +
+                "value2={4}, value1={5}, value={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.value3, self.value2,
+                    self.value1, self.value, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(RfxMeter, self).__init__()
+        self.idbyte = None
+        self.value = None
+        self.value3 = None
+        self.value2 = None
+        self.value1 = None
+        self.type_string = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.idbyte = data[4]
+        self.value3 = data[7]
+        self.value2 = data[8]
+        self.value1 = data[9]
+        self.value = (self.value3 << 16) + (self.value2 << 8) + self.value1
+        self.rssi_byte = data[10]
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}".format(self.idbyte)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
 
 
 ###############################################################################
@@ -1288,8 +1547,7 @@ class TempHumidBaro(SensorPacket):
     """
 
     TYPES = {0x01: 'BTHR918',
-             0x02: 'BTHR918N, BTHR968',
-             }
+             0x02: 'BTHR918N, BTHR968'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -1333,7 +1591,7 @@ class TempHumidBaro(SensorPacket):
         self.templow = data[7]
         self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
-            self.temp = -self.temp
+            self.temp = -1 * self.temp
         self.humidity = data[8]
         self.humidity_status = data[9]
         self.baro1 = data[10]
@@ -1351,7 +1609,7 @@ class TempHumidBaro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
@@ -1370,15 +1628,17 @@ class TempHumidBaro(SensorPacket):
 ###############################################################################
 
 class Rain(SensorPacket):
-
+    """
+    Data class for the rain packet type
+    """
     TYPES = {
-        0x01: "RGR126/682/918",
-        0x02: "PCR800",
-        0x03: "TFA",
-        0x04: "UPM RG700",
-        0x05: "WS2300",
-        0x06: "La Crosse TX5"
-        }
+        0x01: 'RGR126/682/918',
+        0x02: 'PCR800',
+        0x03: 'TFA',
+        0x04: 'UPM RG700',
+        0x05: 'WS2300',
+        0x06: 'La Crosse TX5',
+        0x07: 'Alecto'}
 
     def __str__(self):
         return ("Rain [subtype={0}, seqnbr={1}, id={2}, rainrate={3}, " +
@@ -1431,15 +1691,78 @@ class Rain(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
 
+
+###############################################################################
+# TempRain class
+###############################################################################
+
+class TempRain(SensorPacket):
+    """
+    Data class for the TempRain packet type
+    """
+
+    TYPES = {0x01: 'TR1 - WS1200'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("TempRain [subtype={0}, seqnbr={1}, id={2}, temp={3}, " +
+                "totalrain={4}, battery={5}, rssi={6}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.temp, self.totalrain,
+                    self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(TempRain, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.temphigh = None
+        self.templow = None
+        self.temp = None
+        self.raintotal = None
+        self.battery = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.temphigh = data[6]
+        self.templow = data[7]
+        self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
+        if self.temphigh >= 0x80:
+            self.temp = -1 * self.temp
+        self.raintotal = float(((data[8] & 0x7f) << 8) + data[9]) / 10
+        self.rssi_byte = data[10]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
 
 
 ###############################################################################
 # Wind class
 ###############################################################################
+
 
 class Wind(SensorPacket):
     """
@@ -1452,7 +1775,7 @@ class Wind(SensorPacket):
              0x04: 'TFA',
              0x05: 'UPM WDS500',
              0x06: 'WS2300',
-             }
+             0x07: 'Alecto WS4500'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
@@ -1474,7 +1797,11 @@ class Wind(SensorPacket):
         self.average_speed = None
         self.gust = None
         self.temperature = None
+        self.temphigh = None
+        self.templow = None
         self.chill = None
+        self.chillhigh = None
+        self.chilllow = None
         self.battery = None
         self.rssi = None
 
@@ -1490,12 +1817,19 @@ class Wind(SensorPacket):
         self.direction = data[6] * 256 + data[7]
         self.average_speed = data[8] * 256.0 + data[9] / 10.0
         self.gust = data[10] * 256.0 + data[11] / 10.0
-        self.temperature = (-1 * (data[12] >> 7)) * (
-                (data[12] & 0x7f) * 256.0 + data[13]) / 10.0
-        self.chill = (-1 * (data[14] >> 7)) * (
-                (data[14] & 0x7f) * 256.0 + data[15]) / 10.0
+        self.temphigh = data[12]
+        self.templow = data[13]
+        self.temperature = float(((self.temphigh & 0x7f) << 8) +
+                                 self.templow) / 10
+        if self.temphigh >= 0x80:
+            self.temperature = -1 * self.temperature
+        self.chillhigh = data[14]
+        self.chilllow = data[15]
+        self.chill = float(((self.chillhigh & 0x7f) << 8) + self.chilllow) / 10
+        if self.chillhigh >= 0x80:
+            self.chill = -1 * self.chill
         if self.subtype == 0x03:
-            self.battery = data[16] + 1 * 10   
+            self.battery = data[16] + 1 * 10
         else:
             self.rssi_byte = data[16]
             self.battery = self.rssi_byte & 0x0f
@@ -1508,6 +1842,726 @@ class Wind(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
+            # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+
+
+###############################################################################
+# UV class
+###############################################################################
+
+class UV(SensorPacket):
+    """
+    Data class for the uv packet type
+    """
+    TYPES = {0x01: 'UVN128, UV138',
+             0x02: 'UVN800',
+             0x03: 'TFA'}
+
+    def __str__(self):
+        return ("UV [subtype={0}, seqnbr={1}, id={2}, uv={3}," +
+                " battery={5}, rssi={6}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.uvi, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(UV, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.uvi = None
+        self.battery = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.uvi = float(data[6]) / 10
+        self.rssi_byte = data[9]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Energy1 class
+###############################################################################
+
+
+class Energy1(SensorPacket):
+    """
+    Data class for the Energy "ELEC1" packet type
+    """
+
+    TYPES = {0x01: 'ELEC1, Electrisave'}
+
+    def __str__(self):
+        return ("Energy1 [subtype={0}, seqnbr={1}, id={2}, count={3}, " +
+                "current_amps1={4}, current_amps2={5}, current_amps3={6}, " +
+                "battery={7}, rssi={8}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.count, self.currentamps1, self.currentamps2,
+                    self.currentamps3, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy1, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.count = None
+        self.currentamps1 = None
+        self.currentamps2 = None
+        self.currentamps3 = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.count = data[6]
+        self.currentamps1 = float((data[7] << 8) + data[8]) / 10
+        self.currentamps2 = float((data[9] << 8) + data[10]) / 10
+        self.currentamps3 = float((data[11] << 8) + data[12]) / 10
+        self.rssi_byte = data[13]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Energy class
+###############################################################################
+
+
+class Energy(SensorPacket):
+    """
+    Data class for the Energy packet type
+    """
+
+    TYPES = {0x01: 'ELEC2, CM119/160',
+             0x02: 'ELEC3, CM180'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Energy [subtype={0}, seqnbr={1}, id={2}, count={3}, " +
+                "current_watts={4}, total_watts={5}" +
+                "battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.count, self.currentwatt, self.totalwatts,
+                    self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.count = None
+        self.currentwatt = None
+        self.totalwatts = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.count = data[6]
+        self.currentwatt = ((data[7] * pow(2, 24)) + (data[8] << 16) +
+                            (data[9] << 8) + data[10])
+        self.totalwatts = ((data[11] * pow(2, 40)) + (data[12] * pow(2, 32)) +
+                           (data[13] * pow(2, 24)) + (data[14] << 16) +
+                           (data[15] << 8) + data[16]) / 223.666
+
+        if self.subtype == 0x03:
+            self.battery = data[17] + 1 * 10
+        else:
+            self.rssi_byte = data[17]
+            self.battery = self.rssi_byte & 0x0f
+            self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Energy4 class
+###############################################################################
+
+
+class Energy4(SensorPacket):
+    """
+    Data class for the Energy "ELEC4" packet type
+    """
+
+    TYPES = {0x01: 'ELEC4, CM180i'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Energy4 [subtype={0}, seqnbr={1}, id={2}, count={3}, " +
+                "current_amps1={4}, current_amps2={5}, current_amps3={6}, " +
+                "total_watts={7}, battery={8}, rssi={9}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.count, self.currentamps1, self.currentamps2,
+                    self.currentamps3, self.totalwatthours, self.battery,
+                    self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy4, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.count = None
+        self.currentamps1 = None
+        self.currentamps2 = None
+        self.currentamps3 = None
+        self.totalwatthours = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.count = data[6]
+        self.currentamps1 = float((data[7] << 8) + data[8]) / 10
+        self.currentamps2 = float((data[9] << 8) + data[10]) / 10
+        self.currentamps3 = float((data[11] << 8) + data[12]) / 10
+        self.totalwatthours = ((data[13] * pow(2, 40)) +
+                               (data[14] * pow(2, 32)) +
+                               (data[15] * pow(2, 24)) + (data[16] << 16) +
+                               (data[17] << 8) + data[18]) / 223.666
+        self.rssi_byte = data[19]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Energy5 class
+###############################################################################
+
+
+class Energy5(SensorPacket):
+    """
+    Data class for the Energy "ELEC5" packet type
+    """
+
+    TYPES = {0x01: 'ELEC5, Revolt'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Energy5 [subtype={0}, seqnbr={1}, id={2}, voltage={3}, " +
+                "current_amps={4}, current_watts={5}, total_watts={6}, " +
+                "powerfactor={7}, frequency={8}, rssi={9}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.voltage, self.currentamps, self.currentwatt,
+                    self.totalwatthours, self.powerfactor, self.frequency,
+                    self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Energy5, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.voltage = None
+        self.currentamps = None
+        self.currentwatt = None
+        self.totalwatthours = None
+        self.powerfactor = None
+        self.frequency = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.voltage = data[6]
+        self.currentamps = float((data[7] << 8) + data[8]) / 100
+        self.currentwatt = float((data[9] << 8) + data[10]) / 10
+        self.totalwatthours = float((data[11] << 8) + data[12]) * 10
+        self.powerfactor = float(data[13]) / 100
+        self.frequency = float(data[14])
+        self.rssi_byte = data[15]
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+
+###############################################################################
+# Chime class
+###############################################################################
+
+
+class Chime(SensorPacket):
+    """
+    Data class for the Chime packet type
+    """
+
+    TYPES = {0x00: 'Byron SX',
+             0x01: 'Byron MP001',
+             0x02: 'Select Plus',
+             0x03: 'Select Plus 3',
+             0x04: 'Envivo'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Chime [subtype={0}, seqnbr={1}, id={2}, sound={3}, " +
+                "battery={6}, rssi={7}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.sound, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Chime, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.sound = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.sound = data[6]
+        self.rssi_byte = data[7]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+###############################################################################
+# Security1 class
+###############################################################################
+
+
+class Security1(SensorPacket):
+    """
+    Data class for the Security1 packet type
+    """
+
+    TYPES = {0x00: 'X10 Security',
+             0x01: 'X10 Security Motion Detector',
+             0x02: 'X10 Security Remote',
+             0x03: 'KD101 Smoke Detector',
+             0x04: 'Visonic Powercode Door/Window Sensor Primary Contact',
+             0x05: 'Visonic Powercode Motion Detector',
+             0x06: 'Visonic Codesecure',
+             0x07: 'Visonic Powercode Door/Window Sensor Auxilary Contact',
+             0x08: 'Meiantech',
+             0x09: 'Alecto SA30 Smoke Detector',
+             0x0A: 'RM174RF Smoke Detector'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+    STATUS = {0x00: 'Normal',
+              0x01: 'Normal Delayed',
+              0x02: 'Alarm',
+              0x03: 'Alarm Delayed',
+              0x04: 'Motion',
+              0x05: 'No Motion',
+              0x06: 'Panic',
+              0x07: 'End Panic',
+              0x08: 'IR',
+              0x09: 'Arm Away',
+              0x0A: 'Arm Away Delayed',
+              0x0B: 'Arm Home',
+              0x0C: 'Arm Home Delayed',
+              0x0D: 'Disarm',
+              0x10: 'Light 1 Off',
+              0x11: 'Light 1 On',
+              0x12: 'Light 2 Off',
+              0x13: 'Light 2 On',
+              0x14: 'Dark Detected',
+              0x15: 'Light Detected',
+              0x16: 'Battery low',
+              0x17: 'Pairing KD101',
+              0x80: 'Normal Tamper',
+              0x81: 'Normal Delayed Tamper',
+              0x82: 'Alarm Tamper',
+              0x83: 'Alarm Delayed Tamper',
+              0x84: 'Motion Tamper',
+              0x85: 'No Motion Tamper'}
+    """
+    Mapping of numeric status values to strings, used in type_string
+    """
+
+    def __str__(self):
+        return ("Security1 [subtype={0}, seqnbr={1}, id={2}, status={3}, " +
+                "battery={4}, rssi={5}]") \
+            .format(self.type_string, self.seqnbr, self.id_string,
+                    self.security1_status_string, self.battery, self.rssi)
+
+    def __init__(self):
+        """Constructor"""
+        super(Security1, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.id3 = None
+        self.id_combined = None
+        self.security1_status = None
+        self.battery = None
+        self.rssi = None
+        self.security1_status_string = 'unknown'
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.id3 = data[6]
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        self.security1_status = data[7]
+        self.rssi_byte = data[8]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:06x}:{1}".format(self.id_combined,
+                                              self.packettype)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+        if self.security1_status in self.STATUS:
+            self.security1_status_string = self.STATUS[self.security1_status]
+
+###############################################################################
+# Rfy class
+###############################################################################
+
+
+class Rfy(Packet):
+    """
+    Data class for the Rfy packet type
+    """
+    TYPES = {0x00: 'Rfy',
+             0x01: 'Rfy Extended',
+             0x03: 'ASA'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    COMMANDS = {0x00: 'Stop',
+                0x01: 'Up',
+                0x03: 'Down',
+                0x13: 'Enable sun automation',
+                0x14: 'Disable sun automation'}
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
+    """
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Rfy [subtype={0}, seqnbr={1}, id={2}, cmnd={3}]" \
+            .format(
+                self.subtype,
+                self.seqnbr,
+                self.id_string,
+                self.cmnd_string
+            )
+
+    def __init__(self):
+        """Constructor"""
+        super(Rfy, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.id3 = None
+        self.id_combined = None
+        self.unitcode = None
+        self.cmnd = None
+        self.cmnd_string = None
+
+    def parse_id(self, subtype, id_string):
+        """( a string id into individual components"""
+        try:
+            self.packettype = 0x1a
+            self.subtype = subtype
+            self.id_combined = int(id_string[:6], 16)
+            self.id1 = self.id_combined >> 16
+            self.id2 = self.id_combined >> 8 & 0xff
+            self.id3 = self.id_combined & 0xff
+            self.unitcode = int(id_string[7:])
+            self._set_strings()
+        except ValueError:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.id3 = data[6]
+        self.unitcode = data[7]
+        if self.packetlength > 7:
+            self.cmnd = data[8]
+
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        self._set_strings()
+
+    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd):
+        """Load data from individual data fields"""
+        self.packetlength = 0x08
+        self.packettype = 0x1a
+        self.subtype = subtype
+        self.seqnbr = seqnbr
+        self.id_combined = id_combined
+        self.id1 = id_combined >> 16
+        self.id2 = id_combined >> 8 & 0xff
+        self.id3 = id_combined & 0xff
+        self.unitcode = unitcode
+        self.cmnd = cmnd
+        self.data = bytearray([self.packetlength, self.packettype,
+                               self.subtype, self.seqnbr,
+                               self.id1, self.id2, self.id3, self.unitcode,
+                               self.cmnd])
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:06x}:{1}".format(self.id_combined,
+                                              self.unitcode)
+
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+
+###############################################################################
+# RollerTrol class
+###############################################################################
+
+
+class RollerTrol(Packet):
+    """
+    Data class for the RollerTrol packet type
+    """
+    TYPES = {0x00: 'RollerTrol'}
+    """
+    Mapping of numeric subtype values to strings, used in type_string
+    """
+
+    COMMANDS = {0x02: 'Stop',
+                0x00: 'Up',
+                0x01: 'Down'}
+    """
+    Mapping of command numeric values to strings, used for cmnd_string
+    """
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return ("RollerTrol [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
+                "rssi={4}]") \
+            .format(
+                self.subtype,
+                self.seqnbr,
+                self.id_string,
+                self.cmnd_string,
+                self.rssi
+            )
+
+    def __init__(self):
+        """Constructor"""
+        super(RollerTrol, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.id3 = None
+        self.id_combined = None
+        self.unitcode = None
+        self.cmnd = None
+        self.cmnd_string = None
+
+    def parse_id(self, subtype, id_string):
+        """( a string id into individual components"""
+        try:
+            self.packettype = 0x19
+            self.subtype = subtype
+            self.id_combined = int(id_string[:6], 16)
+            self.id1 = self.id_combined >> 16
+            self.id2 = self.id_combined >> 8 & 0xff
+            self.id3 = self.id_combined & 0xff
+            self.unitcode = int(id_string[7:])
+            self._set_strings()
+        except ValueError:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.id3 = data[6]
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        self.unitcode = data[7]
+        self.cmnd = data[8]
+        self.rssi_byte = data[9]
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd):
+        """Load data from individual data fields"""
+        self.packetlength = 0x09
+        self.packettype = 0x19
+        self.subtype = subtype
+        self.seqnbr = seqnbr
+        self.id_combined = id_combined
+        self.id1 = id_combined >> 16
+        self.id2 = id_combined >> 8 & 0xff
+        self.id3 = id_combined & 0xff
+        self.unitcode = unitcode
+        self.cmnd = cmnd
+        self.rssi_byte = 0
+        self.rssi = self.rssi_byte >> 4
+        self.data = bytearray([self.packetlength, self.packettype,
+                               self.subtype, self.seqnbr,
+                               self.id1, self.id2, self.id3, self.unitcode,
+                               self.cmnd, self.rssi])
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:06x}:{1}".format(self.id_combined,
+                                              self.unitcode)
+
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+        if self.cmnd is not None:
+            if self.cmnd in self.COMMANDS:
+                self.cmnd_string = self.COMMANDS[self.cmnd]
+            else:
+                self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)

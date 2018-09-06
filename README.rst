@@ -1,42 +1,24 @@
-========
-pyRFXtrx
-========
+==========
+ pyRFXtrx  |Build Status| |Coverage Status|
+==========
 
 A Python library to communicate with the RFXtrx family of devices
-from http://www.rfxcom.com/
-
-See https://github.com/woudt/pyRFXtrx for the latest version.
+from http://www.rfxcom.com/. Works with http://www.home-assistant.io
 
 
 Using
 =====
 
-Install pySerial first::
-	$ sudo easy_install -U pyserial
+Instally via pip
 
+::
+   $ pip install -U pyRFXtrx
 
 After that, see the examples in the examples directory
 
 
-Developers
-==========
-
-To run the test scripts::
-	$ ./test_run.sh
-
-To run the test scripts for all supported Python versions (requires a proper
-environment, with all Python versions (2.6, 2.7, 3.1, 3.2 and 3.3) installed)::
-	$ doctest/all_versions.sh
-
-Run pylint and pep8 checks on the source code:
-	$ sudo easy_install -U pep8 logilab-common logilab-astng pylint
-	$ ./lint_run.sh
-
-
 Licensing
 =========
-
-Copyright (C) 2012  Edwin Woudt <edwin@woudt.nl>
 
 pyRFXtrx is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
@@ -51,3 +33,11 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with pyRFXtrx.  See the file COPYING.txt in the distribution.
 If not, see <http://www.gnu.org/licenses/>.
+
+
+.. |Build Status| image:: https://travis-ci.org/Danielhiversen/pyRFXtrx.svg?branch=master
+   :target: https://travis-ci.org/Danielhiversen/pyRFXtrx
+.. |Coverage Status| image:: https://img.shields.io/coveralls/Danielhiversen/pyRFXtrx.svg
+   :target: https://coveralls.io/r/Danielhiversen/pyRFXtrx?branch=master
+
+

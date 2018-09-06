@@ -1,0 +1,13 @@
+[MASTER]
+reports=no
+
+# Reasons disabled:
+# locally-disabled - it spams too much
+# redefined-variable-type - this is Python, we're duck typing!
+
+disable=
+  locally-disabled,
+  redefined-variable-type
+
+
+[EXCEPTIONS]
