@@ -25,6 +25,7 @@ from __future__ import print_function
 
 from time import sleep
 import threading
+import socket
 import serial
 from . import lowlevel
 
@@ -678,6 +679,81 @@ class PySerialTransport(RFXtrxTransport):
         """ close connection to rfxtrx device """
         self._run_event.clear()
         self.serial.close()
+
+
+###############################################################################
+# PyNetworkTransport class
+###############################################################################
+
+
+class PyNetworkTransport(RFXtrxTransport):
+    """ Implementation of a transport using sockets """
+
+    def __init__(self, hostport, debug=False):
+        self.debug = debug
+        self.hostport = hostport    # must be a (host, port) tuple
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._run_event = threading.Event()
+        self._run_event.set()
+        self.connect()
+
+    def connect(self):
+        """ Open a socket connection """
+        try:
+            self.sock.connect(self.hostport)
+            print("RFXTRX: Connected to network socket")
+        except socket.error:
+            print('RFXTRX: Failed to create socket, check host port config')
+            # This may throw exception for use by caller:
+            self.sock.connect(self.hostport)
+
+    def receive_blocking(self):
+        """ Wait until a packet is received and return with an RFXtrxEvent """
+        data = None
+        while self._run_event.is_set():
+            try:
+                data = self.sock.recv(1)
+            except socket.error:
+                import time
+                try:
+                    self.connect()
+                except socket.error:
+                    time.sleep(5)
+                    continue
+            if not data or data == '\x00':
+                continue
+            pkt = bytearray(data)
+            while len(pkt) < pkt[0]:
+                data = self.sock.recv(pkt[0])
+                pkt.extend(bytearray(data))
+            if self.debug:
+                print("RFXTRX: Recv: " +
+                      " ".join("0x{0:02x}".format(x) for x in pkt))
+            return self.parse(pkt)
+
+    def send(self, data):
+        """ Send the given packet """
+        if isinstance(data, bytearray):
+            pkt = data
+        elif isinstance(data, (bytes, str)):
+            pkt = bytearray(data)
+        else:
+            raise ValueError("Invalid type")
+        if self.debug:
+            print("RFXTRX: Send: " +
+                  " ".join("0x{0:02x}".format(x) for x in pkt))
+        self.sock.send(pkt)
+
+    def reset(self):
+        """ Reset the RFXtrx """
+        self.send(b'\x0D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        sleep(0.3)
+        self.sock.sendall(b'')
+
+    def close(self):
+        """ close connection to rfxtrx device """
+        self._run_event.clear()
+        self.sock.close()
 
 
 class DummyTransport(RFXtrxTransport):
