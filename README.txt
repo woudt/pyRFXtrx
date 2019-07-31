@@ -1,3 +1,8 @@
+Note: this repository is no longer maintained!
+
+Please see the fork by Danielhiversen for a more up to date version!
+https://github.com/Danielhiversen/pyRFXtrx
+
 ========
 pyRFXtrx
 ========
