@@ -808,7 +808,6 @@ class Connect:
                  transport_protocol=PySerialTransport,
                  modes=None):
         self._run_event = threading.Event()
-        self._run_event.set()
         self._sensors = {}
         self._status = None
         self._modes = modes
@@ -819,6 +818,7 @@ class Connect:
         self._thread = threading.Thread(target=self._connect)
         self._thread.setDaemon(True)
         self._thread.start()
+        self._run_event.wait()
 
     def _connect(self):
         """Connect """
@@ -833,6 +833,8 @@ class Connect:
             print("RFXTRX: ", self._status.device)
 
         self.send_start()
+
+        self._run_event.set()
 
         while self._run_event.is_set():
             event = self.transport.receive_blocking()
