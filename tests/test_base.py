@@ -19,7 +19,7 @@ class CoreTestCase(TestCase):
     def test_constructor(self):
         global num_calbacks
         core = RFXtrx.Core(self.path, event_callback=_callback, debug=False,transport_protocol=RFXtrx.DummyTransport2)
-        while num_calbacks < 5:
+        while num_calbacks < 6:
             time.sleep(0.1)
 
         self.assertEquals(len(core.sensors()),2)
@@ -231,8 +231,9 @@ class CoreTestCase(TestCase):
         #Chime
         bytes_array = [0x0a, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         event = core.transport.parse(bytes_array)
-        self.assertEquals(RFXtrx.SensorEvent, type(event))
-        self.assertEquals(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='Byron SX' id='00:00'] values=[('Battery numeric', 0), ('Rssi numeric', 0), ('Sound', 0)]")
+        self.assertEquals(RFXtrx.ControlEvent, type(event))
+        self.assertEquals(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.ChimeDevice'> type='Byron SX' id='00:00'] values=[('Command', 'Chime'), ('Rssi numeric', 0), ('Sound', 0)]")
+        event.device.send_chime(core.transport, 1)
 
         #security1
         bytes_array = [0x0a, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -384,6 +385,7 @@ class CoreTestCase(TestCase):
     def test_set_recmodes(self):
         core = RFXtrx.Connect(self.path, event_callback=_callback, debug=False, 
                               transport_protocol=RFXtrx.DummyTransport)
+        time.sleep(0.2)
         self.assertEquals(None, core._modes)
 
         modes = ['ac', 'arc', 'hideki', 'homeeasy', 'keeloq', 'lacrosse', 'oregon', 'rsl', 'x10']
@@ -404,6 +406,7 @@ class CoreTestCase(TestCase):
 
     def test_receive(self):
         core = RFXtrx.Connect(self.path, event_callback=_callback, debug=False, transport_protocol=RFXtrx.DummyTransport)
+        time.sleep(0.2)
         # Lighting1
         bytes_array = bytearray([0x07, 0x10, 0x00, 0x2a, 0x45, 0x05, 0x01, 0x70])
         event= core.transport.receive(bytes_array)

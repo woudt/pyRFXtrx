@@ -2172,7 +2172,7 @@ class Energy5(SensorPacket):
 ###############################################################################
 
 
-class Chime(SensorPacket):
+class Chime(Packet):
     """
     Data class for the Chime packet type
     """
@@ -2200,6 +2200,21 @@ class Chime(SensorPacket):
         self.sound = None
         self.battery = None
         self.rssi = None
+        self.cmnd = None
+        self.cmnd_string = None
+
+    def parse_id(self, subtype, id_string):
+        """Parse a string id into individual components"""
+        try:
+            self.packettype = 0x16
+            self.subtype = subtype
+            self.id1 = int(id_string[:2], 16)
+            self.id2 = int(id_string[3:5], 16)
+            self._set_strings()
+        except ValueError:
+            raise ValueError("Invalid id_string")
+        if self.id_string != id_string:
+            raise ValueError("Invalid id_string")
 
     def load_receive(self, data):
         """Load data from a bytearray"""
@@ -2216,6 +2231,23 @@ class Chime(SensorPacket):
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
+    def set_transmit(self, subtype, seqnbr, id1, id2, sound):
+        """Load data from individual data fields"""
+        self.packetlength = 0x07
+        self.packettype = 0x16
+        self.subtype = subtype
+        self.seqnbr = seqnbr
+        self.id1 = id1
+        self.id2 = id2
+        self.sound = sound
+        self.battery = 0
+        self.rssi = 0
+        self.rssi_byte = (self.rssi << 4) | self.battery
+        self.data = bytearray([self.packetlength, self.packettype,
+                               self.subtype, self.seqnbr,
+                               self.id1, self.id2, self.sound,
+                               self.rssi_byte])
+
     def _set_strings(self):
         """Translate loaded numeric values into convenience strings"""
         self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
@@ -2225,6 +2257,7 @@ class Chime(SensorPacket):
             # Degrade nicely for yet unknown subtypes
             self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
                                                          self.subtype)
+        self.cmnd_string = "Chime"
 
 ###############################################################################
 # Security1 class

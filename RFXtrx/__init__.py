@@ -335,6 +335,20 @@ class LightingDevice(RFXtrxDevice):
             raise ValueError("Unsupported packettype")
 
 
+class ChimeDevice(RFXtrxDevice):
+    """ Concrete class for a control device """
+    def __init__(self, pkt):
+        super(ChimeDevice, self).__init__(pkt)
+        self.id1 = pkt.id1
+        self.id2 = pkt.id2
+
+    def send_chime(self, transport, sound):
+        """Trigger a chime sound on device."""
+        pkt = lowlevel.Chime()
+        pkt.set_transmit(self.subtype, 0, self.id1, self.id2, sound)
+        transport.send(pkt.data)
+
+
 ###############################################################################
 # get_devide method
 ###############################################################################
@@ -367,6 +381,10 @@ def get_device(packettype, subtype, id_string):
         pkt = lowlevel.Lighting6()
         pkt.parse_id(subtype, id_string)
         return LightingDevice(pkt)
+    if packettype == 0x16:  # Chime
+        pkt = lowlevel.Chime()
+        pkt.parse_id(subtype, id_string)
+        return ChimeDevice(pkt)
     if packettype == 0x19:  # RollerTrol
         pkt = lowlevel.RollerTrol()
         pkt.parse_id(subtype, id_string)
@@ -458,8 +476,6 @@ class SensorEvent(RFXtrxEvent):
             self.values['Current'] = pkt.currentamps
             self.values['Energy usage'] = pkt.currentwatt
             self.values['Total usage'] = pkt.totalwatthours
-        if isinstance(pkt, lowlevel.Chime):
-            self.values['Sound'] = pkt.sound
         if isinstance(pkt, lowlevel.Security1):
             self.values['Sensor Status'] = pkt.security1_status_string
         if not isinstance(pkt, (lowlevel.Energy5, lowlevel.RfxMeter)):
@@ -488,6 +504,8 @@ class ControlEvent(RFXtrxEvent):
             device = RollerTrolDevice(pkt)
         elif isinstance(pkt, lowlevel.Rfy):
             device = RfyDevice(pkt)
+        elif isinstance(pkt, lowlevel.Chime):
+            device = ChimeDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
@@ -507,6 +525,9 @@ class ControlEvent(RFXtrxEvent):
         if isinstance(pkt, lowlevel.Lighting5) \
                 and pkt.cmnd in [0x0d, 0x0e, 0x0f]:
             self.device.known_to_be_rollershutter = True
+
+        if isinstance(pkt, lowlevel.Chime):
+            self.values['Sound'] = pkt.sound
 
         if pkt.rssi is not None:
             self.values['Rssi numeric'] = pkt.rssi
@@ -557,6 +578,7 @@ class _dummySerial:
                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor1
         self._data[7] = [0x0a, 0x20, 0x00, 0x00, 0x00,
                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # sensor2
+        self._close_event = threading.Event()
 
     def write(self, *args, **kwargs):
         """ Dummy function for writing"""
@@ -568,6 +590,7 @@ class _dummySerial:
     def read(self, data=None):
         """ Dummy function for reading"""
         if data is not None or self._read_num >= len(self._data):
+            self._close_event.wait(0.1)
             return []
         res = self._data[self._read_num]
         self._read_num = self._read_num + 1
@@ -575,6 +598,7 @@ class _dummySerial:
 
     def close(self):
         """ close connection to rfxtrx device """
+        self._close_event.set()
 
 
 ###############################################################################
@@ -765,10 +789,12 @@ class DummyTransport(RFXtrxTransport):
     def __init__(self, device="", debug=True):
         self.device = device
         self.debug = debug
+        self._close_event = threading.Event()
 
     def receive(self, data=None):
         """ Emulate a receive by parsing the given data """
         if data is None:
+            self._close_event.wait(0.1)
             return None
         pkt = bytearray(data)
         if self.debug:
@@ -787,6 +813,10 @@ class DummyTransport(RFXtrxTransport):
         if self.debug:
             print("RFXTRX: Send: " +
                   " ".join("0x{0:02x}".format(x) for x in pkt))
+
+    def close(self):
+        """Close."""
+        self._close_event.set()
 
 
 class DummyTransport2(PySerialTransport):
