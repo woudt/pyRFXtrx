@@ -226,7 +226,7 @@ class Status(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Status, self).__init__()
+        super().__init__()
         self.tranceiver_type = None
         self.firmware_version = None
         self.output_power = None
@@ -345,7 +345,7 @@ class Lighting1(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting1, self).__init__()
+        super().__init__()
         self.housecode = None
         self.unitcode = None
         self.cmnd = None
@@ -362,8 +362,8 @@ class Lighting1(Packet):
                     self.housecode = hcode_num
             self.unitcode = int(id_string[1:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -459,7 +459,7 @@ class Lighting2(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting2, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -482,8 +482,8 @@ class Lighting2(Packet):
             self.id4 = self.id_combined & 0xff
             self.unitcode = int(id_string[8:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -586,7 +586,7 @@ class Lighting3(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting3, self).__init__()
+        super().__init__()
         self.system = None
         self.channel1 = None
         self.channel2 = None
@@ -605,8 +605,8 @@ class Lighting3(Packet):
             self.channel1 = self.channel & 0xff
             self.channel2 = self.channel >> 8
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -697,7 +697,7 @@ class Lighting4(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting4, self).__init__()
+        super().__init__()
         self.cmd1 = None
         self.cmd2 = None
         self.cmd3 = None
@@ -717,8 +717,8 @@ class Lighting4(Packet):
             self.cmd2 = (self.cmd >> 8) & 0xff
             self.cmd3 = self.cmd & 0xff
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -882,7 +882,7 @@ class Lighting5(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting5, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -903,8 +903,8 @@ class Lighting5(Packet):
             self.id3 = self.id_combined & 0xff
             self.unitcode = int(id_string[7:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -1007,7 +1007,7 @@ class Lighting6(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Lighting6, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id_combined = None
@@ -1030,8 +1030,8 @@ class Lighting6(Packet):
             self.groupcode = ord(id_string[5])
             self.unitcode = int(id_string[6:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -1156,7 +1156,7 @@ class Temp(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Temp, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.temphigh = None
@@ -1216,7 +1216,7 @@ class Bbq(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Bbq, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -1280,7 +1280,7 @@ class Humid(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Humid, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.humidity = None
@@ -1356,7 +1356,7 @@ class TempHumid(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(TempHumid, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.temphigh = None
@@ -1426,7 +1426,7 @@ class Baro(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Baro, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.baro1 = None
@@ -1502,7 +1502,7 @@ class RfxMeter(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(RfxMeter, self).__init__()
+        super().__init__()
         self.idbyte = None
         self.value = None
         self.value3 = None
@@ -1562,7 +1562,7 @@ class TempHumidBaro(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(TempHumidBaro, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.temphigh = None
@@ -1648,7 +1648,7 @@ class Rain(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Rain, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.rainrate1 = None
@@ -1719,7 +1719,7 @@ class TempRain(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(TempRain, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.temphigh = None
@@ -1790,7 +1790,7 @@ class Wind(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Wind, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.direction = None
@@ -1869,7 +1869,7 @@ class UV(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(UV, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.uvi = None
@@ -1923,7 +1923,7 @@ class Energy1(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Energy1, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.count = None
@@ -1988,7 +1988,7 @@ class Energy(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Energy, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.count = None
@@ -2058,7 +2058,7 @@ class Energy4(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Energy4, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.count = None
@@ -2128,7 +2128,7 @@ class Energy5(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Energy5, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.voltage = None
@@ -2196,7 +2196,7 @@ class Chime(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Chime, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.sound = None
@@ -2213,8 +2213,8 @@ class Chime(Packet):
             self.id1 = int(id_string[:2], 16)
             self.id2 = int(id_string[3:5], 16)
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -2325,7 +2325,7 @@ class Security1(SensorPacket):
 
     def __init__(self):
         """Constructor"""
-        super(Security1, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -2408,7 +2408,7 @@ class Rfy(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(Rfy, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -2428,8 +2428,8 @@ class Rfy(Packet):
             self.id3 = self.id_combined & 0xff
             self.unitcode = int(id_string[7:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
@@ -2524,7 +2524,7 @@ class RollerTrol(Packet):
 
     def __init__(self):
         """Constructor"""
-        super(RollerTrol, self).__init__()
+        super().__init__()
         self.id1 = None
         self.id2 = None
         self.id3 = None
@@ -2544,8 +2544,8 @@ class RollerTrol(Packet):
             self.id3 = self.id_combined & 0xff
             self.unitcode = int(id_string[7:])
             self._set_strings()
-        except ValueError:
-            raise ValueError("Invalid id_string")
+        except ValueError as exc:
+            raise ValueError("Invalid id_string") from exc
         if self.id_string != id_string:
             raise ValueError("Invalid id_string")
 
