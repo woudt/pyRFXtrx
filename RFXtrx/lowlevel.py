@@ -1815,9 +1815,10 @@ class Wind(SensorPacket):
         self.id1 = data[4]
         self.id2 = data[5]
         self.direction = data[6] * 256 + data[7]
-        self.average_speed = (data[8] * 256.0 + data[9]) / 10.0
+        if self.subtype != 0x05:
+            self.average_speed = (data[8] * 256.0 + data[9]) / 10.0
         self.gust = (data[10] * 256.0 + data[11]) / 10.0
-        if self.subtype not in (0x06, 0x07):
+        if self.subtype in (0x04, 0x08, 0x09):
             self.temphigh = data[12]
             self.templow = data[13]
             self.temperature = float(((self.temphigh & 0x7f) << 8) +
@@ -1831,7 +1832,7 @@ class Wind(SensorPacket):
             if self.chillhigh >= 0x80:
                 self.chill = -1 * self.chill
         if self.subtype == 0x03:
-            self.battery = data[16] + 1 * 10
+            self.battery = data[16]
         else:
             self.rssi_byte = data[16]
             self.battery = self.rssi_byte & 0x0f
@@ -2014,7 +2015,7 @@ class Energy(SensorPacket):
                            (data[15] << 8) + data[16]) / 223.666
 
         if self.subtype == 0x03:
-            self.battery = data[17] + 1 * 10
+            self.battery = data[17]
         else:
             self.rssi_byte = data[17]
             self.battery = self.rssi_byte & 0x0f
@@ -2348,7 +2349,8 @@ class Security1(SensorPacket):
         self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
         self.security1_status = data[7]
         self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
+        if self.subtype not in (0x03, 0x09, 0x0A):
+            self.battery = self.rssi_byte & 0x0f
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
