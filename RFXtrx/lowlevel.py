@@ -24,80 +24,10 @@ RFXtrx.
 # pylint: disable=C0302,R0902,R0903,R0911,R0913
 # pylint: disable= too-many-lines, too-many-statements
 
-
-def parse(data):
-    # pylint: disable=too-many-branches
-    """ Parse a packet from a bytearray """
-    if data[0] == 0 or len(data) < 2:
-        # null length packet - sometimes happens on initialization
-        return None
-
-    expected_length = data[0] + 1
-    if len(data) != expected_length:
-        return None
-
-    if data[1] == 0x01:
-        pkt = Status()
-    elif data[1] == 0x10:
-        pkt = Lighting1()
-    elif data[1] == 0x11:
-        pkt = Lighting2()
-    elif data[1] == 0x12:
-        pkt = Lighting3()
-    elif data[1] == 0x13:
-        pkt = Lighting4()
-    elif data[1] == 0x14:
-        pkt = Lighting5()
-    elif data[1] == 0x15:
-        pkt = Lighting6()
-    elif data[1] == 0x16:
-        pkt = Chime()
-    elif data[1] == 0x19:
-        pkt = RollerTrol()
-    elif data[1] == 0x1A:
-        pkt = Rfy()
-    elif data[1] == 0x20:
-        pkt = Security1()
-    elif data[1] == 0x50:
-        pkt = Temp()
-    elif data[1] == 0x4E:
-        pkt = Bbq()
-    elif data[1] == 0x4F:
-        pkt = TempRain()
-    elif data[1] == 0x51:
-        pkt = Humid()
-    elif data[1] == 0x52:
-        pkt = TempHumid()
-    elif data[1] == 0x53:
-        pkt = Baro()
-    elif data[1] == 0x54:
-        pkt = TempHumidBaro()
-    elif data[1] == 0x55:
-        pkt = Rain()
-    elif data[1] == 0x56:
-        pkt = Wind()
-    elif data[1] == 0x57:
-        pkt = UV()
-    elif data[1] == 0x59:
-        pkt = Energy1()
-    elif data[1] == 0x5A:
-        pkt = Energy()
-    elif data[1] == 0x5B:
-        pkt = Energy4()
-    elif data[1] == 0x5C:
-        pkt = Energy5()
-    elif data[1] == 0x71:
-        pkt = RfxMeter()
-    else:
-        return None
-
-    pkt.load_receive(data)
-    return pkt
-
-
 ###############################################################################
 # Packet class
 ###############################################################################
+
 
 class Packet():
     """ Abstract superclass for all low level packets """
@@ -2606,3 +2536,68 @@ class RollerTrol(Packet):
                 self.cmnd_string = self.COMMANDS[self.cmnd]
             else:
                 self.cmnd_string = self._UNKNOWN_CMND.format(self.cmnd)
+
+
+PACKET_TYPES = {
+    0x01: Status,
+    0x10: Lighting1,
+    0x11: Lighting2,
+    0x12: Lighting3,
+    0x13: Lighting4,
+    0x14: Lighting5,
+    0x15: Lighting6,
+    0x16: Chime,
+    0x19: RollerTrol,
+    0x1A: Rfy,
+    0x20: Security1,
+    0x50: Temp,
+    0x4E: Bbq,
+    0x4F: TempRain,
+    0x51: Humid,
+    0x52: TempHumid,
+    0x53: Baro,
+    0x54: TempHumidBaro,
+    0x55: Rain,
+    0x56: Wind,
+    0x57: UV,
+    0x59: Energy1,
+    0x5A: Energy,
+    0x5B: Energy4,
+    0x5C: Energy5,
+    0x71: RfxMeter,
+}
+
+
+def get_packet(packettype):
+    """Return a packet based on the packet type."""
+    cls = PACKET_TYPES.get(packettype)
+    if cls is None:
+        return None
+    return cls()
+
+
+def get_packet_with_id(packettype, subtype, id_string):
+    """Return a packet based on the type and identifiers."""
+    pkt = get_packet(packettype)
+    if pkt is None or not hasattr(pkt, "parse_id"):
+        return None
+    pkt.parse_id(subtype, id_string)
+    return pkt
+
+
+def parse(data):
+    """ Parse a packet from a bytearray """
+    if data[0] == 0 or len(data) < 2:
+        # null length packet - sometimes happens on initialization
+        return None
+
+    expected_length = data[0] + 1
+    if len(data) != expected_length:
+        return None
+
+    pkt = get_packet(data[1])
+    if pkt is None:
+        return None
+
+    pkt.load_receive(data)
+    return pkt
