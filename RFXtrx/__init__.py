@@ -77,45 +77,32 @@ class RollerTrolDevice(RFXtrxDevice):
             self.id_combined = pkt.id_combined
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
+            self.COMMANDS = lowlevel.RollerTrol.COMMANDS
+
+    def send_command(self, transport, command):
+        """ Send a command using the given transport """
+        pkt = lowlevel.RollerTrol()
+        pkt.set_transmit(
+            self.subtype,
+            self.cmndseqnbr,
+            self.id_combined,
+            self.unitcode,
+            command
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
 
     def send_close(self, transport):
         """ Send a 'Close' command using the given transport """
-        pkt = lowlevel.RollerTrol()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x01
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x01)
 
     def send_open(self, transport):
         """ Send an 'Open' command using the given transport """
-        pkt = lowlevel.RollerTrol()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x00
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x00)
 
     def send_stop(self, transport):
         """ Send a 'Stop' command using the given transport """
-        pkt = lowlevel.RollerTrol()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x02
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x02)
 
 
 class RfyDevice(RFXtrxDevice):
@@ -127,71 +114,40 @@ class RfyDevice(RFXtrxDevice):
             self.id_combined = pkt.id_combined
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
+            self.COMMANDS = lowlevel.Rfy.COMMANDS
+
+    def send_command(self, transport, command):
+        """ Send a command using the given transport """
+        pkt = lowlevel.Rfy()
+        pkt.set_transmit(
+            self.subtype,
+            self.cmndseqnbr,
+            self.id_combined,
+            self.unitcode,
+            command
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
 
     def send_close(self, transport):
         """ Send a 'Close' command using the given transport """
-        pkt = lowlevel.Rfy()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x03
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x03)
 
     def send_open(self, transport):
         """ Send an 'Open' command using the given transport """
-        pkt = lowlevel.Rfy()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x01
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x01)
 
     def send_stop(self, transport):
         """ Send a 'Stop' command using the given transport """
-        pkt = lowlevel.Rfy()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x00
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x00)
 
     def send_on(self, transport):
         """ Send an 'Enable Sun Automation' command """
-        pkt = lowlevel.Rfy()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x13
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x13)
 
     def send_off(self, transport):
         """ Send an 'Disable Sun Automation' command """
-        pkt = lowlevel.Rfy()
-        pkt.set_transmit(
-            self.subtype,
-            self.cmndseqnbr,
-            self.id_combined,
-            self.unitcode,
-            0x14
-        )
-        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
-        transport.send(pkt.data)
+        self.send_command(transport, 0x14)
 
 
 class LightingDevice(RFXtrxDevice):
@@ -203,59 +159,91 @@ class LightingDevice(RFXtrxDevice):
         if isinstance(pkt, lowlevel.Lighting1):
             self.housecode = pkt.housecode
             self.unitcode = pkt.unitcode
+            self.COMMANDS = lowlevel.Lighting1.COMMANDS
         if isinstance(pkt, lowlevel.Lighting2):
             self.id_combined = pkt.id_combined
             self.unitcode = pkt.unitcode
+            self.COMMANDS = lowlevel.Lighting2.COMMANDS
         if isinstance(pkt, lowlevel.Lighting3):
             self.system = pkt.system
             self.channel = pkt.channel
+            self.COMMANDS = lowlevel.Lighting3.COMMANDS
         if isinstance(pkt, lowlevel.Lighting4):
             self.cmd = pkt.cmd
             self.pulse = pkt.pulse
+            self.COMMANDS = lowlevel.Lighting4.COMMANDS
         if isinstance(pkt, lowlevel.Lighting5):
             self.id_combined = pkt.id_combined
             self.unitcode = pkt.unitcode
+            if self.subtype == 0x00:
+                self.COMMANDS = lowlevel.Lighting5.COMMANDS_00
+            elif self.subtype == 0x01:
+                self.COMMANDS = lowlevel.Lighting5.COMMANDS_01
+            elif self.subtype in (0x02, 0x04, 0x0F):
+                self.COMMANDS = lowlevel.Lighting5.COMMANDS_02_04_0F
+            elif self.subtype == 0x03:
+                self.COMMANDS = lowlevel.Lighting5.COMMANDS_03
+            else:
+                self.COMMANDS = lowlevel.Lighting5.COMMANDS_XX
         if isinstance(pkt, lowlevel.Lighting6):
             self.id_combined = pkt.id_combined
             self.groupcode = pkt.groupcode
             self.unitcode = pkt.unitcode
             self.cmndseqnbr = 0
+            self.COMMANDS = lowlevel.Lighting6.COMMANDS
 
-    def send_onoff(self, transport, turn_on):
-        """ Send an 'On' or 'Off' command using the given transport """
+    def send_command(self, transport, command):
+        """ Send an ommand using the given transport """
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
             pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             turn_on and 0x01 or 0x00)
+                             command)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             turn_on and 0x01 or 0x00, 0x00)
+                             command, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
             pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             turn_on and 0x10 or 0x1a)
+                             command)
             transport.send(pkt.data)
         elif self.packettype == 0x13:  # Lighting4
             pkt = lowlevel.Lighting4()
             code = self.cmd & ~1
-            code |= 0x1 if turn_on else 0x0
-            pkt.set_transmit(self.subtype, 0, code, self.pulse)
+            code |= command
+            pkt.set_transmit(self.subtype, 0, command, self.pulse)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             turn_on and 0x01 or 0x00, 0x00)
+                             command, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
             pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
                              self.unitcode,
-                             not turn_on and 0x01 or 0x00, self.cmndseqnbr)
+                             command, self.cmndseqnbr)
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
+        else:
+            return
+
+    def send_onoff(self, transport, turn_on):
+        """ Send an 'On' or 'Off' command using the given transport """
+        if self.packettype == 0x10:  # Lighting1
+            self.send_command(transport, turn_on and 0x01 or 0x00)
+        elif self.packettype == 0x11:  # Lighting2
+            self.send_command(transport, turn_on and 0x01 or 0x00)
+        elif self.packettype == 0x12:  # Lighting3
+            self.send_command(transport, turn_on and 0x10 or 0x1a)
+        elif self.packettype == 0x13:  # Lighting4
+            self.send_command(transport, 0x1 if turn_on else 0x0)
+        elif self.packettype == 0x14:  # Lighting5
+            self.send_command(transport, turn_on and 0x01 or 0x00)
+        elif self.packettype == 0x15:  # Lighting6
+            self.send_command(transport, not turn_on and 0x01 or 0x00)
         else:
             return
 
@@ -273,10 +261,7 @@ class LightingDevice(RFXtrxDevice):
         if self.packettype == 0x14:  # Lighting5
             if command not in [0x0d, 0x0e, 0x0f]:
                 raise ValueError(command, "is not a relay packet in Lighting5")
-            pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             command, 0x00)
-            transport.send(pkt.data)
+            self.send_command(transport, command)
         else:
             raise ValueError("Unsupported packettype")
 
