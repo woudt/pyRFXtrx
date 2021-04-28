@@ -345,8 +345,9 @@ class ChimeDevice(RFXtrxDevice):
         super().__init__(pkt)
         self.id1 = pkt.id1
         self.id2 = pkt.id2
+        self.COMMANDS = lowlevel.Chime.COMMANDS
 
-    def send_chime(self, transport, sound):
+    def send_command(self, transport, sound):
         """Trigger a chime sound on device."""
         pkt = lowlevel.Chime()
         pkt.set_transmit(self.subtype, 0, self.id1, self.id2, sound)
@@ -370,9 +371,33 @@ def get_device_from_pkt(pkt):
         device = RfyDevice(pkt)
     elif isinstance(pkt, lowlevel.Chime):
         device = ChimeDevice(pkt)
+    elif isinstance(pkt, lowlevel.Security1):
+        device = SecurityDevice(pkt)
     else:
         device = RFXtrxDevice(pkt)
     return device
+
+
+class SecurityDevice(RFXtrxDevice):
+    """ Concrete class for a control device """
+
+    def __init__(self, pkt):
+        super().__init__(pkt)
+        self.id_combined = pkt.id_combined
+        self.cmndseqnbr = 0
+        self.STATUS = lowlevel.Security1.STATUS
+
+    def send_status(self, transport, status):
+        """Trigger a status message on device."""
+        pkt = lowlevel.Security1()
+        pkt.set_transmit(
+            self.subtype,
+            self.cmndseqnbr,
+            self.id_combined,
+            status
+        )
+        self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
+        transport.send(pkt.data)
 
 
 ###############################################################################

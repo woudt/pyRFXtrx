@@ -1116,7 +1116,8 @@ None
 >>> print(x.battery)
 9
 
-
+Security1
+---------
 
 UV
 --
@@ -1141,4 +1142,3 @@ RFXMeter
 
 FS20
 ----
-
