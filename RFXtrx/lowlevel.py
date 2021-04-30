@@ -1568,7 +1568,10 @@ class Rain(SensorPacket):
         0x04: 'UPM RG700',
         0x05: 'WS2300',
         0x06: 'La Crosse TX5',
-        0x07: 'Alecto'}
+        0x07: 'Alecto',
+        0x08: 'Davis',
+        0x09: 'TFA 30.3233.01'
+    }
 
     def __str__(self):
         return ("Rain [subtype={0}, seqnbr={1}, id={2}, rainrate={3}, " +
@@ -1601,15 +1604,26 @@ class Rain(SensorPacket):
         self.id2 = data[5]
         self.rainrate1 = data[6]
         self.rainrate2 = data[7]
-        self.rainrate = (self.rainrate1 << 8) + self.rainrate2
-        if self.subtype == 2:
-            self.rainrate = float(self.rainrate) / 100
+        if self.subtype in (1, 2):
+            self.rainrate = float((self.rainrate1 << 8) + self.rainrate2)
+            if self.subtype == 2:
+                self.rainrate = float(self.rainrate) / 100
         self.raintotal1 = data[8]
         self.raintotal2 = data[9]
         self.raintotal3 = data[10]
-        self.raintotal = float((self.raintotal1 << 16) +
-                               (self.raintotal2 << 8) +
-                               self.raintotal3) / 10
+
+        if self.subtype in (1, 2, 3, 4, 5, 7):
+            self.raintotal = float((self.raintotal1 << 16) +
+                                   (self.raintotal2 << 8) +
+                                   self.raintotal3) / 10
+        elif self.subtype == 6:
+            self.raintotal = 0.266 * self.raintotal3
+        elif self.subtype == 8:
+            # cartridge can be 0.01 inch rather than 0.2mm
+            self.raintotal = 0.2 * self.raintotal3
+        elif self.subtype == 9:
+            self.raintotal = 0.254 * self.raintotal3
+
         self.rssi_byte = data[11]
         self.battery = self.rssi_byte & 0x0f
         self.rssi = self.rssi_byte >> 4
