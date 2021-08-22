@@ -2755,5 +2755,10 @@ def parse(data):
     if pkt is None:
         return None
 
-    pkt.load_receive(data)
+    try:
+        pkt.load_receive(data)
+    except IndexError:
+        # parsing failed due to invalid packet length
+        return None
+
     return pkt

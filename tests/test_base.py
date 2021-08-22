@@ -28,6 +28,12 @@ class CoreTestCase(TestCase):
         core.close_connection()
         self.assertFalse(core._thread.is_alive())
 
+    def test_invalid_packet(self):
+        bytes_array = bytearray([0x09, 0x11, 0xd7, 0x00, 0x01, 0x1d, 0x14, 0x02, 0x79, 0x0a])
+        core = RFXtrx.Connect(self.path, event_callback=_callback, transport_protocol=RFXtrx.DummyTransport)
+        event = core.transport.parse(bytes_array)
+        self.assertIsNone(event)
+
     def test_format_packet(self):
         # Lighting1
         core = RFXtrx.Connect(self.path, event_callback=_callback, transport_protocol=RFXtrx.DummyTransport)
