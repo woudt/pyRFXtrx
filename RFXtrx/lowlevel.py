@@ -204,9 +204,9 @@ def get_recmode_tuple(mode_name):
     Return a tuple (listno, sublistno), or (None, None) if
     not found.
     """
-    for i in range(0, len(Status.RECMODES)):
-        if mode_name in Status.RECMODES[i]:
-            return (i, Status.RECMODES[i].index(mode_name))
+    for i, modes in enumerate(Status.RECMODES):
+        if mode_name in modes:
+            return (i, modes.index(mode_name))
     return (None, None)
 
 
@@ -287,8 +287,8 @@ class Lighting1(Packet):
             self.packettype = 0x10
             self.subtype = subtype
             hcode = id_string[0:1]
-            for hcode_num in self.HOUSECODES:
-                if self.HOUSECODES[hcode_num] == hcode:
+            for hcode_num, hcode_code in self.HOUSECODES.items():
+                if hcode_code == hcode:
                     self.housecode = hcode_num
             self.unitcode = int(id_string[1:])
             self._set_strings()
@@ -2582,8 +2582,7 @@ class RollerTrol(Packet):
              0x04: 'BlindsT4 / Raex YR1326',
              0x05: 'BlindsT5 / Media Mount',
              0x06: 'BlindsT6 / DC106/Rohrmotor24-RMF/Yooda',
-             0x07: 'BlindsT7 / Forest'
-    }
+             0x07: 'BlindsT7 / Forest'}
     """
     Mapping of numeric subtype values to strings, used in type_string
     """

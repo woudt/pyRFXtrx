@@ -568,7 +568,7 @@ class StatusEvent(RFXtrxEvent):
             type(self), self.device)
 
 ###############################################################################
-# DummySerila class
+# DummySerial class
 ###############################################################################
 
 
@@ -867,7 +867,7 @@ class Connect:
 
         self.transport = transport_protocol(device)
         self._thread = threading.Thread(target=self._connect)
-        self._thread.setDaemon(True)
+        self._thread.daemon = True
         self._thread.start()
         self._run_event.wait()
 
