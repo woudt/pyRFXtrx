@@ -1098,7 +1098,7 @@ class Undecoded(SensorPacket):
 
     def __str__(self):
         return ("Undecoded [subtype={0} payload={1}]").format(self.type_string,
-                                       self.payload)
+                                                              self.payload)
 
     def __init__(self):
         """Constructor"""
@@ -1694,8 +1694,8 @@ class Rain(SensorPacket):
             # cartridge can be 0.01 inch rather than 0.2mm
             self.raintotal = 0.2 * self.raintotal3
         elif self.subtype == 9:
-            self.raintotal = 0.254 * float((self.raintotal2 << 8) + 
-                                            self.raintotal3)
+            self.raintotal = 0.254 * float((self.raintotal2 << 8) +
+                                           self.raintotal3)
 
         self.rssi_byte = data[11]
         self.battery = self.rssi_byte & 0x0f
@@ -2223,6 +2223,7 @@ class Cartelectronic(SensorPacket):
         self.id2 = None
         self.id3 = None
         self.id4 = None
+        self.id5 = None
         self.id_combined = None
         self.counter1 = None
         self.counter2 = None
